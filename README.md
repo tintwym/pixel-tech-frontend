@@ -2,25 +2,33 @@
 
 Next.js App Router storefront for Pixel Tech.
 
-## Run locally
-
-**Prerequisites:** Node.js 20+, Pixel Tech API on **8081**
+## Setup
 
 ```bash
-cp .env.example .env.local   # optional GEMINI_API_KEY for Smart Bundles
+cp .env.example .env
+# Edit .env — set API_PROXY_TARGET + optional GEMINI_API_KEY
 npm install
 npm run dev
 ```
 
+Use **only** `.env` (not `.env.local`). `.env` is gitignored.
+
 App: [http://127.0.0.1:3000](http://127.0.0.1:3000)  
-API proxy: `/api/*` → `http://127.0.0.1:8081` (except `/api/recipes`)
+API proxy: `/api/*` → `API_PROXY_TARGET` (except local `/api/recipes`)
 
-Admin: `/admin` — demo password `pixel-admin`
+Admin: `/admin`
 
-| App | Port |
-|-----|------|
-| Pixel Tech web | 3000 |
-| Pixel Tech API | 8081 |
+## Environment
+
+| Variable | Purpose |
+|----------|---------|
+| `API_PROXY_TARGET` | Cloud Run / Spring origin (no `/api` suffix) |
+| `GEMINI_API_KEY` | Optional Smart Bundles |
+
+Production (Vercel): set the **same** keys in the Vercel project env, then redeploy.
+
+Live site: https://pixel-tech-mm.vercel.app  
+API: https://pixel-tech-api-389277809553.asia-southeast1.run.app
 
 ## Stack
 

@@ -1,22 +1,18 @@
 # Pixel Tech Web — Vercel
 
-See the monorepo guide: [`../DEPLOY.md`](../DEPLOY.md).
-
-## Env
+Use a single env file locally: **`.env`** (never `.env.local`).
 
 ```bash
-# Required in production — Cloud Run (or other) API origin, no /api suffix
-API_PROXY_TARGET=https://your-api.example.com
-
-# Optional Smart Bundles
-GEMINI_API_KEY=
+cp .env.example .env
 ```
 
-## CLI deploy
+On Vercel → **Settings → Environment Variables**, set:
 
-```bash
-npx vercel login
-npx vercel --prod
-```
+| Name | Value |
+|------|--------|
+| `API_PROXY_TARGET` | `https://pixel-tech-api-389277809553.asia-southeast1.run.app` |
+| `GEMINI_API_KEY` | your Gemini key (optional) |
 
-Root Directory in the Vercel project must be `pixel_tech_web` if the Git repo is the whole Pixel Tech folder.
+Then redeploy.
+
+See also [`../DEPLOY.md`](../DEPLOY.md).
