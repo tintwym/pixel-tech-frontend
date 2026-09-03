@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   X, User, MapPin, CreditCard, Shield, Gift, Link2, Download, Trash2, CheckCircle2,
-  Lock, AlertCircle, BarChart3, Package, Clock, ShoppingBag, XCircle, Truck, ChevronRight
+  Lock, AlertCircle, BarChart3, Package, Clock, ShoppingBag, XCircle, Truck, ChevronRight,
+  LogOut
 } from 'lucide-react';
 import { UserProfile, DeliveryAddress, PaymentMethod, Order } from '@/types';
 import { INITIAL_GROCERIES } from '@/data/products';
@@ -407,12 +408,18 @@ export default function UserProfileModal({
         <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between bg-slate-50 dark:bg-[#121a24] shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
             <div className="relative shrink-0">
-              <img
-                src={profile.avatarUrl}
-                alt="Avatar"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-sky-500 object-cover"
-                referrerPolicy="no-referrer"
-              />
+              {profile.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt=""
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-sky-500 object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="flex w-9 h-9 sm:w-10 sm:h-10 items-center justify-center rounded-full border-2 border-sky-500 bg-[#e0f2fe] text-sm font-semibold text-[#0284c7]">
+                  {(profile.name || 'A').charAt(0).toUpperCase()}
+                </span>
+              )}
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-sky-500 border-2 border-white dark:border-[#0B1220] rounded-full" />
             </div>
             <div className="min-w-0">
@@ -437,31 +444,43 @@ export default function UserProfileModal({
         {/* Content body split */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Tabs Sidebar / Mobile Navigation Strip */}
-          <div className="w-full md:w-56 bg-slate-100/70 dark:bg-[#0D0D0D] p-2 sm:p-3 border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10 flex flex-row md:flex-col gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
-            {[
-              { id: 'profile', label: 'Basic Profile', icon: User },
-              { id: 'orders', label: 'Order History', icon: Package },
-              { id: 'addresses', label: 'Delivery Addresses', icon: MapPin },
-              { id: 'payments', label: 'Payment Wallet', icon: CreditCard },
-              { id: 'loyalty', label: 'Loyalty Rewards', icon: Gift },
-              { id: 'gdpr', label: 'GDPR Privacy', icon: Shield }
-            ].map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0 whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'bg-[#0284c7] text-white shadow-xs font-semibold'
-                      : 'text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-[#121a24] md:bg-transparent md:dark:bg-transparent hover:bg-slate-200/60 dark:hover:bg-[#181818]'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="whitespace-nowrap">{tab.label}</span>
-                </button>
-              );
-            })}
+          <div className="w-full md:w-56 md:self-stretch bg-slate-100/70 dark:bg-[#0D0D0D] p-2 sm:p-3 border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10 flex flex-row md:flex-col gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
+            <div className="flex flex-row md:flex-col gap-1.5 overflow-x-auto flex-1 scrollbar-none">
+              {[
+                { id: 'profile', label: 'Basic Profile', icon: User },
+                { id: 'orders', label: 'Order History', icon: Package },
+                { id: 'addresses', label: 'Delivery Addresses', icon: MapPin },
+                { id: 'payments', label: 'Payment Wallet', icon: CreditCard },
+                { id: 'loyalty', label: 'Loyalty Rewards', icon: Gift },
+                { id: 'gdpr', label: 'GDPR Privacy', icon: Shield }
+              ].map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors shrink-0 whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? 'bg-[#0284c7] text-white shadow-xs font-semibold'
+                        : 'text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-[#121a24] md:bg-transparent md:dark:bg-transparent hover:bg-slate-200/60 dark:hover:bg-[#181818]'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="whitespace-nowrap">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {onSignOut && (
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="hidden md:flex items-center gap-2 mt-auto px-3 py-2.5 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer shrink-0"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                Sign out
+              </button>
+            )}
           </div>
 
           {/* Main content display area */}
@@ -538,19 +557,10 @@ export default function UserProfileModal({
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    {onSignOut && (
-                      <button
-                        type="button"
-                        onClick={onSignOut}
-                        className="px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg cursor-pointer transition-colors"
-                      >
-                        Sign out
-                      </button>
-                    )}
+                  <div className="flex flex-wrap items-center justify-end gap-3">
                     <button
                       type="submit"
-                      className="ml-auto px-4 py-2 bg-[#0284c7] hover:bg-[#0ea5e9] text-white text-sm font-semibold rounded-lg shadow-xs cursor-pointer transition-colors"
+                      className="px-4 py-2 bg-[#0284c7] hover:bg-[#0ea5e9] text-white text-sm font-semibold rounded-lg shadow-xs cursor-pointer transition-colors"
                     >
                       Save Changes
                     </button>

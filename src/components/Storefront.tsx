@@ -16,6 +16,7 @@ import GroceryCatalog from '@/components/GroceryCatalog';
 import CartAndCheckout from '@/components/CartAndCheckout';
 import OrderTracker from '@/components/OrderTracker';
 import UserProfileModal from '@/components/UserProfileModal';
+import ProfileMenu from '@/components/ProfileMenu';
 import AuthModal from '@/components/AuthModal';
 import NotificationCenter, { NotificationMsg } from '@/components/NotificationCenter';
 import ToastContainer, { ToastMessage } from '@/components/ToastContainer';
@@ -278,6 +279,15 @@ export default function Storefront() {
   const openAccount = () => {
     if (isSignedIn) setIsProfileOpen(true);
     else setIsAuthOpen(true);
+  };
+
+  const handleSignOut = () => {
+    storeToken(null);
+    setIsSignedIn(false);
+    setIsProfileOpen(false);
+    setCart([]);
+    setOrders([]);
+    handleAddToast('Signed out', 'Come back anytime for fresh products.', 'info');
   };
 
   // Push notifications inbox
@@ -595,25 +605,13 @@ export default function Storefront() {
             </button>
 
             {isSignedIn ? (
-              <button
-                id="profile-toggle-btn"
-                onClick={() => setIsProfileOpen(true)}
-                className="hidden sm:flex items-center gap-2 border border-[#0284c7]/15 dark:border-white/10 p-1 rounded-full hover:bg-white/80 dark:hover:bg-[#121a24] transition-colors cursor-pointer"
-                aria-label="Open customer profile"
-              >
-                {profile.avatarUrl ? (
-                  <img
-                    src={profile.avatarUrl}
-                    alt=""
-                    className="w-7 h-7 rounded-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e0f2fe] text-xs font-semibold text-[#0284c7]">
-                    {(profile.name || 'A').charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </button>
+              <ProfileMenu
+                name={profile.name}
+                avatarUrl={profile.avatarUrl}
+                active={isProfileOpen}
+                onOpenProfile={() => setIsProfileOpen(true)}
+                onSignOut={handleSignOut}
+              />
             ) : (
               <button
                 id="profile-toggle-btn"
@@ -788,14 +786,7 @@ export default function Storefront() {
         }}
         onClearOrders={() => setOrders([])}
         onAddToast={handleAddToast}
-        onSignOut={() => {
-          storeToken(null);
-          setIsSignedIn(false);
-          setIsProfileOpen(false);
-          setCart([]);
-          setOrders([]);
-          handleAddToast('Signed out', 'Come back anytime for fresh products.', 'info');
-        }}
+        onSignOut={handleSignOut}
       />
 
       {/* Post-order feedback modal */}
@@ -1011,28 +1002,28 @@ export default function Storefront() {
           <span className="text-[9px] font-bold mt-0.5">Cart</span>
         </button>
 
-        <button
-          onClick={openAccount}
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-colors min-w-12 min-h-11 ${
-            isProfileOpen || isAuthOpen
-              ? 'text-sky-500 dark:text-sky-400 font-extrabold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-sky-500'
-          }`}
-        >
-          {isSignedIn ? (
-            <img
-              src={profile.avatarUrl}
-              alt="Profile"
-              className={`w-5 h-5 rounded-full object-cover border ${
-                isProfileOpen ? 'border-sky-500' : 'border-slate-300 dark:border-white/20'
-              }`}
-              referrerPolicy="no-referrer"
-            />
-          ) : (
+        {isSignedIn ? (
+          <ProfileMenu
+            variant="mobile"
+            name={profile.name}
+            avatarUrl={profile.avatarUrl}
+            active={isProfileOpen}
+            onOpenProfile={() => setIsProfileOpen(true)}
+            onSignOut={handleSignOut}
+          />
+        ) : (
+          <button
+            onClick={openAccount}
+            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-colors min-w-12 min-h-11 ${
+              isAuthOpen
+                ? 'text-sky-500 dark:text-sky-400 font-extrabold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-sky-500'
+            }`}
+          >
             <LogIn className="w-5 h-5" />
-          )}
-          <span className="text-[9px] font-bold mt-0.5">{isSignedIn ? 'Profile' : 'Sign in'}</span>
-        </button>
+            <span className="text-[9px] font-bold mt-0.5">Sign in</span>
+          </button>
+        )}
       </nav>
     </div>
     </>
