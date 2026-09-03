@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
+
+  --color-brand: #0284c7;
+  --color-brand-bright: #0ea5e9;
+  --color-brand-soft: #e0f2fe;
+  --color-mist: #eef4f8;
+  --color-ink: #0f172a;
+  --color-ink-muted: #64748b;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    @apply bg-[#eef4f8] text-[#0f172a] antialiased;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgb(224 242 254 / 0.9), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgb(186 230 253 / 0.35), transparent);
+  }
+
+  html.dark body {
+    @apply bg-[#0B1220] text-[#e7eef5];
+    background-image:
+      radial-gradient(ellipse 70% 45% at 0% 0%, rgb(2 132 199 / 0.28), transparent),
+      radial-gradient(ellipse 50% 40% at 100% 10%, rgb(12 74 110 / 0.35), transparent);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+  }
+
+  code, pre, .mono-text {
+    font-family: var(--font-mono);
+  }
+
+  input, textarea, select {
+    color-scheme: inherit;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .shadow-market {
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.04),
+      0 12px 32px -12px rgb(2 132 199 / 0.18);
+  }
+
+  .shadow-market-hover {
+    box-shadow:
+      0 2px 4px rgb(15 23 42 / 0.06),
+      0 18px 40px -14px rgb(2 132 199 / 0.28);
+  }
+
+  .dark .shadow-market {
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.4),
+      0 12px 28px -10px rgb(0 0 0 / 0.5);
+  }
+
+  .dark .shadow-market-hover {
+    box-shadow:
+      0 2px 6px rgb(0 0 0 / 0.45),
+      0 20px 40px -12px rgb(14 165 233 / 0.2);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
 }
