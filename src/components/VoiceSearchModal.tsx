@@ -5,6 +5,7 @@ import { Mic, MicOff, X, ShoppingCart, Sparkles, Volume2, Search, ArrowRight, Ch
 import { motion, AnimatePresence } from 'motion/react';
 import { GroceryItem } from '@/types';
 import { parseVoiceCommand, VoiceCommandResult } from '@/utils/fuzzySearch';
+import ProductImage from '@/components/ProductImage';
 
 interface VoiceSearchModalProps {
   isOpen: boolean;
@@ -272,7 +273,7 @@ export default function VoiceSearchModal({
 
                 {commandResult.item ? (
                   <div className="flex items-center gap-3 p-2 bg-white dark:bg-[#1a242f] rounded-xl border border-slate-200 dark:border-white/5">
-                    <img
+                    <ProductImage
                       src={commandResult.item.imageUrl}
                       alt={commandResult.item.name}
                       className="w-12 h-12 rounded-lg object-cover"

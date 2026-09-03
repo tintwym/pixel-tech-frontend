@@ -5,6 +5,7 @@ import { Search, X, Mic, ShoppingCart, Sparkles, Tag, Check, Filter } from 'luci
 import { motion, AnimatePresence } from 'motion/react';
 import { GroceryItem } from '@/types';
 import { fuzzySearchProducts } from '@/utils/fuzzySearch';
+import ProductImage from '@/components/ProductImage';
 
 interface NavbarSearchProps {
   products: GroceryItem[];
@@ -117,7 +118,7 @@ export default function NavbarSearch({
                     className="p-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors flex items-center justify-between gap-3 group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <img
+                      <ProductImage
                         src={item.imageUrl}
                         alt={item.name}
                         className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0"

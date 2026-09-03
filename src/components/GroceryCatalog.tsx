@@ -6,6 +6,7 @@ import { GroceryItem, FeaturesRestriction } from '@/types';
 import { DIETARY_OPTIONS, ZONE_OPTIONS, ZONE_DELIVERY_STATUS } from '@/data/products';
 import { motion, AnimatePresence } from 'motion/react';
 import PriceSparkline from '@/components/PriceSparkline';
+import ProductImage from '@/components/ProductImage';
 
 interface GroceryCatalogProps {
   products: GroceryItem[];
@@ -391,12 +392,10 @@ export default function GroceryCatalog({
                 className="group flex flex-col bg-white/90 dark:bg-[#121a24] rounded-2xl overflow-hidden shadow-market hover:shadow-market-hover transition-shadow duration-300"
               >
                 <div className="relative aspect-[4/3] bg-[#e8f0f6] dark:bg-[#0B1220] overflow-hidden">
-                  <img
+                  <ProductImage
                     src={item.imageUrl}
                     alt={item.name}
                     className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
                   />
                   {out && (
                     <span className="absolute inset-0 flex items-center justify-center bg-[#0B1220]/45 text-white text-xs font-semibold tracking-wide">

@@ -22,20 +22,27 @@ function Avatar({
   avatarUrl?: string;
   sizeClass: string;
 }) {
+  const [failed, setFailed] = useState(false);
   const initial = (name || 'A').charAt(0).toUpperCase();
-  if (avatarUrl) {
+
+  useEffect(() => {
+    setFailed(false);
+  }, [avatarUrl]);
+
+  if (avatarUrl && !failed) {
     return (
       <img
         src={avatarUrl}
         alt=""
         className={`${sizeClass} rounded-full object-cover`}
         referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
       />
     );
   }
   return (
     <span
-      className={`flex ${sizeClass} items-center justify-center rounded-full bg-[#e0f2fe] text-xs font-semibold text-[#0284c7]`}
+      className={`flex ${sizeClass} items-center justify-center rounded-full bg-[#e0f2fe] text-[0.65em] font-semibold text-[#0284c7]`}
     >
       {initial}
     </span>
@@ -53,6 +60,7 @@ export default function ProfileMenu({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
+  const toggleId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -75,12 +83,50 @@ export default function ProfileMenu({
     fn();
   };
 
+  const menuPanel = (
+    <div
+      id={menuId}
+      role="menu"
+      className={`z-60 w-56 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white dark:bg-[#121a24] shadow-xl py-1.5 ${
+        variant === 'mobile'
+          ? 'absolute bottom-[calc(100%+0.5rem)] right-0'
+          : 'absolute right-0 top-[calc(100%+0.4rem)]'
+      }`}
+    >
+      <div className="px-3 py-2.5 border-b border-slate-100 dark:border-white/10">
+        <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{name}</p>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+          {variant === 'mobile' ? 'Signed in' : 'Manage your account'}
+        </p>
+      </div>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => closeAnd(onOpenProfile)}
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer"
+      >
+        <UserRound className="w-4 h-4 text-[#0284c7]" />
+        Account settings
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => closeAnd(onSignOut)}
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"
+      >
+        <LogOut className="w-4 h-4" />
+        Sign out
+      </button>
+    </div>
+  );
+
   if (variant === 'mobile') {
     return (
       <div ref={rootRef} className="relative flex flex-col items-center">
         <button
           type="button"
-          id="profile-toggle-btn"
+          id={toggleId}
+          aria-label="Account menu"
           aria-haspopup="menu"
           aria-expanded={open}
           aria-controls={menuId}
@@ -94,37 +140,7 @@ export default function ProfileMenu({
           <Avatar name={name} avatarUrl={avatarUrl} sizeClass="w-5 h-5" />
           <span className="text-[9px] font-bold mt-0.5">Profile</span>
         </button>
-
-        {open && (
-          <div
-            id={menuId}
-            role="menu"
-            className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 w-52 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white dark:bg-[#121a24] shadow-xl py-1.5"
-          >
-            <div className="px-3 py-2 border-b border-slate-100 dark:border-white/10">
-              <p className="text-xs font-semibold text-slate-800 dark:text-white truncate">{name}</p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400">Signed in</p>
-            </div>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => closeAnd(onOpenProfile)}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer"
-            >
-              <UserRound className="w-4 h-4 text-[#0284c7]" />
-              Account settings
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => closeAnd(onSignOut)}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </button>
-          </div>
-        )}
+        {open && menuPanel}
       </div>
     );
   }
@@ -133,7 +149,7 @@ export default function ProfileMenu({
     <div ref={rootRef} className="relative hidden sm:block">
       <button
         type="button"
-        id="profile-toggle-btn"
+        id={toggleId}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
@@ -148,37 +164,7 @@ export default function ProfileMenu({
           className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
-
-      {open && (
-        <div
-          id={menuId}
-          role="menu"
-          className="absolute right-0 top-[calc(100%+0.4rem)] z-50 w-56 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white dark:bg-[#121a24] shadow-xl py-1.5"
-        >
-          <div className="px-3 py-2.5 border-b border-slate-100 dark:border-white/10">
-            <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{name}</p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">Manage your account</p>
-          </div>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => closeAnd(onOpenProfile)}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer"
-          >
-            <UserRound className="w-4 h-4 text-[#0284c7]" />
-            Account settings
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => closeAnd(onSignOut)}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign out
-          </button>
-        </div>
-      )}
+      {open && menuPanel}
     </div>
   );
 }

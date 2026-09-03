@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -143,6 +143,7 @@ export default function Storefront() {
   const [products, setProducts] = useState<GroceryItem[]>(INITIAL_GROCERIES);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const allowPersistStock = useRef(false);
   const [purchaseCounts, setPurchaseCounts] = useState<Record<string, number>>({
     'p1': 5, // iPhone 16 Pro
     'p2': 4, // iPhone 16
@@ -247,6 +248,7 @@ export default function Storefront() {
       const catalog = await fetchCatalogProducts(controller.signal);
       if (!controller.signal.aborted) {
         setProducts(applyStockOverrides(catalog));
+        allowPersistStock.current = true;
       }
     })();
     return () => controller.abort();
@@ -262,6 +264,8 @@ export default function Storefront() {
   }, [orders]);
 
   useEffect(() => {
+    // Avoid writing static INITIAL stock before catalog + local overrides hydrate.
+    if (!allowPersistStock.current) return;
     persistStockLevels(products);
   }, [products]);
 
@@ -286,7 +290,7 @@ export default function Storefront() {
     setIsSignedIn(false);
     setIsProfileOpen(false);
     setCart([]);
-    setOrders([]);
+    // Keep shared demo orders (admin + track) — only clear session cart.
     handleAddToast('Signed out', 'Come back anytime for fresh products.', 'info');
   };
 
@@ -538,14 +542,6 @@ export default function Storefront() {
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
-              onClick={() => setIsVoiceModalOpen(true)}
-              className="flex sm:hidden p-2 bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-xl transition-colors cursor-pointer"
-              title="Voice Search & Commands"
-            >
-              <Mic className="w-4 h-4 animate-pulse" />
-            </button>
-
-            <button
               onClick={() => setIsOrderDetailsOpen(true)}
               className="p-2 sm:px-3 sm:py-1.5 bg-white/70 hover:bg-white dark:bg-[#121a24] dark:hover:bg-[#1a242f] border border-[#0284c7]/12 dark:border-white/10 text-[#0f172a] dark:text-[#e7eef5] font-semibold text-xs rounded-2xl flex items-center gap-1.5 cursor-pointer transition-colors"
               title="View past order receipts & reorder"
@@ -571,7 +567,7 @@ export default function Storefront() {
 
             <button
               onClick={() => router.push('/admin')}
-              className="px-2.5 sm:px-3 py-1.5 bg-white/70 hover:bg-white dark:bg-[#121a24] dark:hover:bg-[#1a242f] border border-[#0284c7]/15 dark:border-white/10 text-[#0284c7] dark:text-sky-400 font-semibold text-xs rounded-2xl flex items-center gap-1 cursor-pointer transition-colors"
+              className="hidden sm:inline-flex px-2.5 sm:px-3 py-1.5 bg-white/70 hover:bg-white dark:bg-[#121a24] dark:hover:bg-[#1a242f] border border-[#0284c7]/15 dark:border-white/10 text-[#0284c7] dark:text-sky-400 font-semibold text-xs rounded-2xl items-center gap-1 cursor-pointer transition-colors"
             >
               <TrendingUp className="w-4 h-4" />
               <span className="hidden md:inline">Admin</span>
@@ -580,8 +576,8 @@ export default function Storefront() {
             <button
               id="notif-toggle-btn"
               onClick={() => setIsNotificationOpen(true)}
-              className="hidden sm:flex p-2 rounded-2xl border border-[#0284c7]/12 dark:border-white/10 hover:bg-white/80 dark:hover:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] relative cursor-pointer"
-              aria-label="Open notifications box"
+              className="p-2 rounded-2xl border border-[#0284c7]/12 dark:border-white/10 hover:bg-white/80 dark:hover:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] relative cursor-pointer"
+              aria-label="Open notifications"
             >
               <Bell className="w-4.5 h-4.5" />
               {notifications.filter(n => !n.read).length > 0 && (
@@ -614,7 +610,6 @@ export default function Storefront() {
               />
             ) : (
               <button
-                id="profile-toggle-btn"
                 onClick={() => setIsAuthOpen(true)}
                 className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-[#0284c7]/25 bg-white/80 dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] text-xs font-semibold hover:bg-white dark:hover:bg-[#1a242f] transition-colors cursor-pointer"
                 aria-label="Sign in or create account"
@@ -907,8 +902,10 @@ export default function Storefront() {
           }`}
         >
           <div className="relative">
-            <Mic className="w-5 h-5 text-sky-500" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full animate-ping" />
+            <Mic className="w-5 h-5" />
+            {isVoiceModalOpen && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full animate-ping" />
+            )}
           </div>
           <span className="text-[9px] font-bold mt-0.5">Voice Order</span>
         </button>
@@ -977,8 +974,10 @@ export default function Storefront() {
           }`}
         >
           <div className="relative">
-            <Truck className="w-5 h-5 text-sky-500" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full border border-white dark:border-slate-900 animate-pulse" />
+            <Truck className="w-5 h-5" />
+            {activeTrackingOrder && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full border border-white dark:border-slate-900 animate-pulse" />
+            )}
           </div>
           <span className="text-[9px] font-bold mt-0.5">Track</span>
         </button>

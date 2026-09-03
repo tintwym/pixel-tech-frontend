@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { CartItem, UserProfile, DeliveryAddress, PaymentMethod, Order, GroceryItem } from '@/types';
 import { motion, AnimatePresence } from 'motion/react';
+import ProductImage from '@/components/ProductImage';
 import {
   AddressFieldErrors,
   PaymentFieldErrors,
@@ -608,11 +609,10 @@ export default function CartAndCheckout({
                       key={`${item.item.id}-${item.isSubscription}`}
                       className="p-3 bg-white dark:bg-[#121a24] border border-slate-100 dark:border-white/5 rounded-xl flex gap-3 relative"
                     >
-                      <img
+                      <ProductImage
                         src={item.item.imageUrl}
                         alt={item.item.name}
                         className="w-16 h-16 rounded-lg object-cover bg-slate-50 shrink-0"
-                        referrerPolicy="no-referrer"
                       />
                       <div className="flex-1 min-w-0 pr-6">
                         <div className="flex items-start justify-between">

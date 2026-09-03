@@ -75,6 +75,11 @@ export default function AuthModal({
   useEffect(() => {
     if (!isOpen) return;
     setMode(initialMode);
+    setFirstName('');
+    setLastName('');
+    setUsername('');
+    setEmail('');
+    setPassword('');
     setErrors({});
     setFormError(null);
     setDidAttempt(false);

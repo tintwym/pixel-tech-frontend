@@ -4,6 +4,7 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { GroceryItem } from '@/types';
 import { motion } from 'motion/react';
+import ProductImage from '@/components/ProductImage';
 
 interface QuickReorderProps {
   products: GroceryItem[];
@@ -42,11 +43,10 @@ export default function QuickReorder({
             whileHover={{ y: -2 }}
             className="snap-start shrink-0 w-[220px] flex items-center gap-3 p-2.5 rounded-2xl bg-white/80 dark:bg-[#121a24] shadow-market"
           >
-            <img
+            <ProductImage
               src={item.imageUrl}
-              alt=""
+              alt={item.name}
               className="w-12 h-12 rounded-xl object-cover shrink-0"
-              referrerPolicy="no-referrer"
             />
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-xs text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2">

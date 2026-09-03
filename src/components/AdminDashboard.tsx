@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { GroceryItem, Order, AdminAnalytics } from '@/types';
 import { motion } from 'motion/react';
+import ProductImage from '@/components/ProductImage';
 import {
   BarChart,
   Bar,
@@ -427,11 +428,10 @@ export default function AdminDashboard({
                     >
                       {/* Left: Product details & confidence */}
                       <div className="flex items-center gap-3.5 min-w-0">
-                        <img
+                        <ProductImage
                           src={p.item.imageUrl}
                           alt={p.item.name}
                           className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200 dark:border-white/10"
-                          referrerPolicy="no-referrer"
                         />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -515,11 +515,10 @@ export default function AdminDashboard({
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <img
+                        <ProductImage
                           src={item.imageUrl}
                           alt={item.name}
                           className="w-12 h-12 rounded-lg object-cover"
-                          referrerPolicy="no-referrer"
                         />
                         <div>
                           <div className="flex items-center gap-1.5">

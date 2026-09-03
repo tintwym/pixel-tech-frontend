@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, RotateCcw, ShoppingBag, MapPin, CreditCard, Calendar, CheckCircle, Clock, Truck, ChevronRight, FileText, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Order, CartItem, GroceryItem } from '@/types';
+import ProductImage from '@/components/ProductImage';
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -212,7 +213,7 @@ export default function OrderDetailsModal({
                       {currentOrder.items.map((cartItem, idx) => (
                         <div key={idx} className="p-3 sm:p-4 flex items-center justify-between gap-3 bg-white dark:bg-[#121a24]">
                           <div className="flex items-center gap-3 min-w-0">
-                            <img
+                            <ProductImage
                               src={cartItem.item.imageUrl}
                               alt={cartItem.item.name}
                               className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0"

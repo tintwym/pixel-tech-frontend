@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, DeliveryAddress, PaymentMethod, Order } from '@/types';
 import { INITIAL_GROCERIES } from '@/data/products';
+import ProductImage from '@/components/ProductImage';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   BarChart,
@@ -69,11 +70,16 @@ export default function UserProfileModal({
 }: UserProfileModalProps) {
   const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses' | 'payments' | 'loyalty' | 'gdpr'>('profile');
   const [orderStatusFilter, setOrderStatusFilter] = useState<'All' | 'Pending' | 'Delivered' | 'Cancelled'>('All');
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const [socialLinked, setSocialLinked] = useState({
     google: true,
     facebook: false,
     apple: false
   });
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [profile.avatarUrl]);
 
   // Calculate order history list and filter counts
   const allOrdersList = useMemo(() => {
@@ -306,10 +312,9 @@ export default function UserProfileModal({
   };
 
   const handleDeleteAddress = (id: string) => {
-    const updated = profile.addresses.filter(a => a.id !== id);
-    // adjust defaults if we deleted default
+    let updated = profile.addresses.filter(a => a.id !== id);
     if (updated.length > 0 && !updated.some(a => a.isDefault)) {
-      updated[0].isDefault = true;
+      updated = updated.map((a, i) => (i === 0 ? { ...a, isDefault: true } : a));
     }
     onUpdateProfile({ ...profile, addresses: updated });
     onAddToast('Address Removed', 'Preferred address has been deleted.', 'info');
@@ -351,9 +356,9 @@ export default function UserProfileModal({
   };
 
   const handleDeletePayment = (id: string) => {
-    const updated = profile.paymentMethods.filter(p => p.id !== id);
+    let updated = profile.paymentMethods.filter(p => p.id !== id);
     if (updated.length > 0 && !updated.some(p => p.isDefault)) {
-      updated[0].isDefault = true;
+      updated = updated.map((p, i) => (i === 0 ? { ...p, isDefault: true } : p));
     }
     onUpdateProfile({ ...profile, paymentMethods: updated });
     onAddToast('Payment Deleted', 'Preferred billing method removed.', 'info');
@@ -408,12 +413,13 @@ export default function UserProfileModal({
         <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between bg-slate-50 dark:bg-[#121a24] shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
             <div className="relative shrink-0">
-              {profile.avatarUrl ? (
+              {profile.avatarUrl && !avatarFailed ? (
                 <img
                   src={profile.avatarUrl}
                   alt=""
                   className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-sky-500 object-cover"
                   referrerPolicy="no-referrer"
+                  onError={() => setAvatarFailed(true)}
                 />
               ) : (
                 <span className="flex w-9 h-9 sm:w-10 sm:h-10 items-center justify-center rounded-full border-2 border-sky-500 bg-[#e0f2fe] text-sm font-semibold text-[#0284c7]">
@@ -475,7 +481,7 @@ export default function UserProfileModal({
               <button
                 type="button"
                 onClick={onSignOut}
-                className="hidden md:flex items-center gap-2 mt-auto px-3 py-2.5 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer shrink-0"
+                className="flex items-center gap-2 mt-0 md:mt-auto px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 bg-white/80 dark:bg-[#121a24] md:bg-transparent md:dark:bg-transparent hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
               >
                 <LogOut className="w-4 h-4 shrink-0" />
                 Sign out
@@ -802,7 +808,7 @@ export default function UserProfileModal({
                             {order.items.map((cartItm, idx) => (
                               <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-slate-100/50 dark:border-white/5 last:border-0">
                                 <div className="flex items-center gap-2.5 truncate pr-2">
-                                  <img
+                                  <ProductImage
                                     src={cartItm.item.imageUrl}
                                     alt={cartItm.item.name}
                                     className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-white/10 shrink-0"
@@ -1341,7 +1347,8 @@ export default function UserProfileModal({
                       { pts: 250, reward: 'Free Delivery to Yankin / Bahan / Hlaing', code: 'FREEDEL' },
                       { pts: 500, reward: '10,000 MMK Tech Store Voucher', code: 'LUXTECH' }
                     ].map(itm => {
-                      const canRedeem = profile.loyaltyPoints >= itm.pts;
+                      const alreadyRedeemed = (profile.redeemedCoupons || []).includes(itm.code);
+                      const canRedeem = profile.loyaltyPoints >= itm.pts && !alreadyRedeemed;
                       return (
                         <div key={itm.pts} className="p-3 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-between bg-slate-50 dark:bg-[#121a24]">
                           <div>
@@ -1356,12 +1363,14 @@ export default function UserProfileModal({
                           <button
                             disabled={!canRedeem}
                             onClick={async () => {
+                              if ((profile.redeemedCoupons || []).includes(itm.code)) {
+                                onAddToast('Already redeemed', `${itm.code} is already in your wallet.`, 'info');
+                                return;
+                              }
+                              if (profile.loyaltyPoints < itm.pts) return;
                               onUpdateProfile(prev => {
                                 if (prev.loyaltyPoints < itm.pts) return prev;
-                                if ((prev.redeemedCoupons || []).includes(itm.code)) {
-                                  onAddToast('Already redeemed', `${itm.code} is already in your wallet.`, 'info');
-                                  return prev;
-                                }
+                                if ((prev.redeemedCoupons || []).includes(itm.code)) return prev;
                                 return {
                                   ...prev,
                                   loyaltyPoints: prev.loyaltyPoints - itm.pts,
@@ -1381,7 +1390,7 @@ export default function UserProfileModal({
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
                             }`}
                           >
-                            Redeem
+                            {alreadyRedeemed ? 'Redeemed' : 'Redeem'}
                           </button>
                         </div>
                       );
@@ -1447,9 +1456,9 @@ export default function UserProfileModal({
                         if (confirmPurge) {
                           onUpdateProfile({
                             id: profile.id,
-                            name: 'User Purged',
-                            email: 'deleted@example.com',
-                            avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+                            name: 'Guest',
+                            email: '',
+                            avatarUrl: '',
                             loyaltyPoints: 0,
                             balance: 0,
                             addresses: [],
@@ -1461,6 +1470,7 @@ export default function UserProfileModal({
                           onClearOrders?.();
                           onAddToast('Account Purged', 'Your personal identity records have been permanently cleared.', 'warning');
                           onClose();
+                          onSignOut?.();
                         }
                       }}
                       className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"

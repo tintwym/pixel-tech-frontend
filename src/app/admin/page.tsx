@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AdminPage from '@/components/AdminPage';
 import ToastContainer, { ToastMessage } from '@/components/ToastContainer';
 import { GroceryItem, Order } from '@/types';
@@ -17,14 +17,21 @@ export default function AdminRoutePage() {
   const [products, setProducts] = useState<GroceryItem[]>(INITIAL_GROCERIES);
   const [orders, setOrders] = useState<Order[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const allowPersistStock = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     fetchCatalogProducts()
       .then((items) => {
-        if (!cancelled && items.length) setProducts(applyStockOverrides(items));
+        if (cancelled) return;
+        setProducts(applyStockOverrides(items.length ? items : INITIAL_GROCERIES));
+        allowPersistStock.current = true;
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (cancelled) return;
+        setProducts(applyStockOverrides(INITIAL_GROCERIES));
+        allowPersistStock.current = true;
+      });
     setOrders(loadPersistedOrders());
     return () => {
       cancelled = true;
@@ -32,6 +39,7 @@ export default function AdminRoutePage() {
   }, []);
 
   useEffect(() => {
+    if (!allowPersistStock.current) return;
     persistStockLevels(products);
   }, [products]);
 
