@@ -4,16 +4,7 @@ import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { Cpu, Clock, Package, BookOpen, Plus, Check, Loader2 } from 'lucide-react';
 import { GroceryItem, CartItem } from '@/types';
 import { motion, AnimatePresence } from 'motion/react';
-
-interface Recipe {
-  name: string;
-  description: string;
-  cookingTime: string;
-  difficulty: string;
-  matchingIngredients: string[];
-  missingIngredients: string[];
-  instructions: string[];
-}
+import { fetchSmartBundles, SmartBundle } from '@/lib/aiApi';
 
 interface SmartRecipesProps {
   cart: CartItem[];
@@ -28,7 +19,7 @@ export default function SmartRecipes({
   onAddToCart,
   onAddToast
 }: SmartRecipesProps) {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<SmartBundle[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -41,28 +32,12 @@ export default function SmartRecipes({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/recipes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ items }),
-        signal,
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch smart recipes');
-      }
-      const data = await response.json();
+      const bundles = await fetchSmartBundles(items, signal);
       if (signal.aborted) return;
-      if (data.recipes) {
-        setRecipes(data.recipes);
-      } else {
-        throw new Error('No recipes returned');
-      }
-    } catch (err: any) {
-      if (err?.name === 'AbortError') return;
-      console.error('Error in fetchRecipes:', err);
-      setError(err.message || 'Something went wrong while generating recipes.');
+      setRecipes(bundles);
+    } catch (err) {
+      if ((err as Error)?.name === 'AbortError') return;
+      setError((err as Error)?.message || 'Couldn’t generate bundle ideas. Please try again.');
     } finally {
       if (!signal.aborted) setLoading(false);
     }
@@ -141,7 +116,7 @@ export default function SmartRecipes({
 
   const handleAddAllMissing = (missingIngredients: string[]) => {
     let addedCount = 0;
-    let notFound: string[] = [];
+    const notFound: string[] = [];
 
     missingIngredients.forEach(ing => {
       const match = findCatalogMatch(ing);
@@ -272,20 +247,20 @@ export default function SmartRecipes({
                   <div className="flex items-center gap-3 mb-4 text-[11px] font-mono text-[#64748b]">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 shrink-0" />
-                      {recipe.cookingTime}
+                      {recipe.setupTime}
                     </span>
                     <span className="w-1 h-1 bg-slate-300 dark:bg-white/10 rounded-full"></span>
                     <span className="flex items-center gap-1 text-[#0284c7] font-semibold">
                       <Check className="w-3.5 h-3.5" />
-                      {recipe.matchingIngredients.length} cart match
+                      {recipe.cartItems.length} cart match
                     </span>
                   </div>
 
-                  {recipe.matchingIngredients.length > 0 && (
+                  {recipe.cartItems.length > 0 && (
                     <div className="mb-3">
                       <span className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider block mb-1">In Your Cart</span>
                       <div className="flex flex-wrap gap-1.5">
-                        {recipe.matchingIngredients.map((item, i) => (
+                        {recipe.cartItems.map((item, i) => (
                           <span
                             key={i}
                             className="inline-flex items-center text-[10px] font-medium bg-[#e0f2fe] text-[#0284c7] dark:bg-[#0c4a6e]/40 dark:text-sky-300 px-2 py-0.5 rounded-full"
@@ -297,11 +272,11 @@ export default function SmartRecipes({
                     </div>
                   )}
 
-                  {recipe.missingIngredients.length > 0 && (
+                  {recipe.suggestedAddOns.length > 0 && (
                     <div className="mb-4">
                       <span className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wider block mb-1.5">Suggested add-ons</span>
                       <div className="flex flex-wrap gap-1.5">
-                        {recipe.missingIngredients.map((item, i) => {
+                        {recipe.suggestedAddOns.map((item, i) => {
                           const catalogItem = findCatalogMatch(item);
                           return (
                             <button
@@ -328,7 +303,7 @@ export default function SmartRecipes({
                       <BookOpen className="w-3 h-3" /> Steps
                     </span>
                     <ol className="list-decimal list-inside space-y-1.5 text-xs text-[#64748b] dark:text-[#8a9eb0]">
-                      {recipe.instructions.map((step, i) => (
+                      {recipe.steps.map((step, i) => (
                         <li key={i} className="leading-relaxed">
                           <span className="font-medium text-[#0f172a] dark:text-[#e7eef5]">{step}</span>
                         </li>
@@ -337,9 +312,9 @@ export default function SmartRecipes({
                   </div>
                 </div>
 
-                {recipe.missingIngredients.length > 0 && (
+                {recipe.suggestedAddOns.length > 0 && (
                   <button
-                    onClick={() => handleAddAllMissing(recipe.missingIngredients)}
+                    onClick={() => handleAddAllMissing(recipe.suggestedAddOns)}
                     className="w-full mt-2 py-2.5 bg-[#0284c7] hover:bg-[#0ea5e9] text-white rounded-2xl text-xs font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />

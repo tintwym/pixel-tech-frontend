@@ -34,18 +34,14 @@ export const ERROR_PAGES: Record<ErrorPageCode, ErrorPageCopy> = {
       'You need to sign in before accessing this part of Pixel Tech.',
     primaryHref: '/',
     primaryLabel: 'Back to store',
-    secondaryHref: '/admin',
-    secondaryLabel: 'Admin sign-in',
   },
   '403': {
     code: '403',
     title: 'Access forbidden',
     description:
-      'You don’t have permission to view this page. If you think this is a mistake, contact support or use an admin account.',
+      'You don’t have permission to view this page. If you think this is a mistake, contact support.',
     primaryHref: '/',
     primaryLabel: 'Back to store',
-    secondaryHref: '/admin',
-    secondaryLabel: 'Try admin hub',
   },
   '404': {
     code: '404',

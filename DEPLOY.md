@@ -11,7 +11,8 @@ On Vercel → **Settings → Environment Variables**, set:
 | Name | Value |
 |------|--------|
 | `API_PROXY_TARGET` | `https://pixel-tech-api-389277809553.asia-southeast1.run.app` |
-| `GEMINI_API_KEY` | your Gemini key (optional) |
+
+AI features call the backend; set `GEMINI_API_KEY` on Cloud Run, not Vercel.
 
 Then redeploy.
 

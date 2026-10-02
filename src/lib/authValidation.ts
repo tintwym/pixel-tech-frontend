@@ -58,35 +58,6 @@ export function validatePassword(value: string, mode: AuthMode): string | undefi
   return undefined;
 }
 
-export function validateAdminUsername(value: string): string | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return 'Please enter an admin username.';
-  if (trimmed.length < 3) return 'Admin username must be at least 3 characters.';
-  if (trimmed.length > 64) return 'Admin username must be 64 characters or fewer.';
-  if (!USERNAME_ALLOWED.test(trimmed)) {
-    return 'Use letters, numbers, dots, underscores, or hyphens.';
-  }
-  return undefined;
-}
-
-export function validateAdminPassword(value: string): string | undefined {
-  if (!value) return 'Please enter your password.';
-  if (value.length < 4) return 'Password looks too short.';
-  return undefined;
-}
-
-export function validateAdminForm(values: {
-  username: string;
-  password: string;
-}): { username?: string; password?: string } {
-  const errors: { username?: string; password?: string } = {};
-  const username = validateAdminUsername(values.username);
-  const password = validateAdminPassword(values.password);
-  if (username) errors.username = username;
-  if (password) errors.password = password;
-  return errors;
-}
-
 export function validateFullName(value: string): string | undefined {
   const trimmed = value.trim();
   if (!trimmed) return 'Please enter your full name.';

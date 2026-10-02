@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Bell, ShoppingCart, Moon, Sun, MapPin, TrendingUp, Home, Truck,
+  Bell, ShoppingCart, Moon, Sun, MapPin, Home, Truck,
   Mic, FileText, LogIn, Monitor, Cpu, ArrowDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -208,8 +207,6 @@ export default function Storefront() {
       }
     ]
   });
-
-  const router = useRouter();
 
   // Restore session from stored JWT (Spring API)
   useEffect(() => {
@@ -566,14 +563,6 @@ export default function Storefront() {
             </button>
 
             <button
-              onClick={() => router.push('/admin')}
-              className="hidden sm:inline-flex px-2.5 sm:px-3 py-1.5 bg-white/70 hover:bg-white dark:bg-[#121a24] dark:hover:bg-[#1a242f] border border-[#0284c7]/15 dark:border-white/10 text-[#0284c7] dark:text-sky-400 font-semibold text-xs rounded-2xl items-center gap-1 cursor-pointer transition-colors"
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span className="hidden md:inline">Admin</span>
-            </button>
-
-            <button
               id="notif-toggle-btn"
               onClick={() => setIsNotificationOpen(true)}
               className="p-2 rounded-2xl border border-[#0284c7]/12 dark:border-white/10 hover:bg-white/80 dark:hover:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] relative cursor-pointer"
@@ -842,8 +831,6 @@ export default function Storefront() {
         isOpen={isNotificationOpen}
         onClose={() => setIsNotificationOpen(false)}
       />
-
-      {/* Administration Hub lives at /admin */}
 
       {/* Voice Assistant & Command Search Modal */}
       <VoiceSearchModal

@@ -14,7 +14,6 @@ const nextConfig: NextConfig = {
     authInterrupts: true,
   },
   async rewrites() {
-    // Local App Router handlers (e.g. /api/recipes) take precedence over rewrites.
     return [
       {
         source: "/api/:path*",

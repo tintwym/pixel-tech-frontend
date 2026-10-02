@@ -124,12 +124,6 @@ export async function fetchCurrentUser(token: string): Promise<AuthUser> {
   };
 }
 
-export async function loginAdmin(username: string, password: string): Promise<string> {
-  const data = await postJson<{ token: string }>('/auth/admins/login', { username, password });
-  if (!data?.token) throw new AuthApiError(500, 'Missing token');
-  return data.token;
-}
-
 export function displayNameFromUser(user: AuthUser): string {
   const full = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
   return full || user.username || user.email || 'Customer';
