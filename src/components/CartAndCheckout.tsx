@@ -9,6 +9,8 @@ import {
 import { CartItem, UserProfile, DeliveryAddress, PaymentMethod, Order, GroceryItem } from '@/types';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductImage from '@/components/ProductImage';
+import Select from '@/components/Select';
+import { DELIVERY_ZONES } from '@/data/products';
 import {
   AddressFieldErrors,
   PaymentFieldErrors,
@@ -802,17 +804,15 @@ export default function CartAndCheckout({
                       ) : null}
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">Pickup Zone</label>
-                      <select
+                      <label id="pickup-zone-label" className="block text-[10px] font-bold text-slate-500 uppercase">Pickup Zone</label>
+                      <Select
+                        size="sm"
+                        aria-labelledby="pickup-zone-label"
                         value={manualAddress.zone}
-                        onChange={e => setManualAddress({ ...manualAddress, zone: e.target.value })}
-                        className="w-full px-3 py-1.5 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121a24] text-xs text-slate-800 dark:text-white rounded-md"
-                      >
-                        <option value="Downtown Yangon">Downtown Yangon</option>
-                        <option value="Yankin">Yankin</option>
-                        <option value="Bahan">Bahan</option>
-                        <option value="Hlaing">Hlaing</option>
-                      </select>
+                        onChange={(zone) => setManualAddress({ ...manualAddress, zone })}
+                        options={DELIVERY_ZONES}
+                        className="w-full px-3 py-1.5 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121a24] text-slate-800 dark:text-white rounded-md"
+                      />
                     </div>
                     <div className="col-span-2">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase">Delivery Address</label>

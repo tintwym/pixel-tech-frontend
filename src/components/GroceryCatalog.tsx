@@ -7,6 +7,7 @@ import { DIETARY_OPTIONS, ZONE_OPTIONS, ZONE_DELIVERY_STATUS } from '@/data/prod
 import { motion, AnimatePresence } from 'motion/react';
 import PriceSparkline from '@/components/PriceSparkline';
 import ProductImage from '@/components/ProductImage';
+import Select from '@/components/Select';
 
 interface GroceryCatalogProps {
   products: GroceryItem[];
@@ -303,19 +304,19 @@ export default function GroceryCatalog({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] text-sm text-[#0f172a] dark:text-[#e7eef5]">
-            <MapPin className="w-4 h-4 text-[#0ea5e9] shrink-0" />
-            <select
-              id="zone-select"
-              value={selectedZone}
-              onChange={(e) => setSelectedZone(e.target.value)}
-              className="bg-transparent font-medium focus:outline-hidden cursor-pointer min-w-0"
-            >
-              {ZONE_OPTIONS.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </label>
+          <Select
+            id="zone-select"
+            aria-label="Delivery zone"
+            value={selectedZone}
+            onChange={setSelectedZone}
+            options={ZONE_OPTIONS.map((zone) => ({
+              value: zone,
+              label: zone,
+              description: ZONE_DELIVERY_STATUS[zone]?.title,
+            }))}
+            icon={<MapPin className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
+            className="min-w-48 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
+          />
 
           <button
             id="best-value-toggle"

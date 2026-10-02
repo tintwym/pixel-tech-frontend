@@ -7,8 +7,9 @@ import {
   LogOut
 } from 'lucide-react';
 import { UserProfile, DeliveryAddress, PaymentMethod, Order } from '@/types';
-import { INITIAL_GROCERIES } from '@/data/products';
+import { DELIVERY_ZONES, INITIAL_GROCERIES } from '@/data/products';
 import ProductImage from '@/components/ProductImage';
+import Select, { SelectOption } from '@/components/Select';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   BarChart,
@@ -21,6 +22,14 @@ import {
   Cell
 } from 'recharts';
 import { validateEmail, validateFullName } from '@/lib/authValidation';
+
+const PAYMENT_PROVIDERS: SelectOption<PaymentMethod['type']>[] = [
+  { value: 'kbzpay', label: 'KBZPay Wallet' },
+  { value: 'wavepay', label: 'WavePay Wallet' },
+  { value: 'ayapay', label: 'AYA Pay Wallet' },
+  { value: 'mmqr', label: 'MMQR (National Standard QR)' },
+  { value: 'mpu', label: 'MPU Debit Card' },
+];
 
 interface SpendTooltipProps {
   active?: boolean;
@@ -254,7 +263,7 @@ export default function UserProfileModal({
 
   // Payment add state
   const [newPayment, setNewPayment] = useState({
-    type: 'kbzpay' as any,
+    type: 'kbzpay' as PaymentMethod['type'],
     accountName: '',
     accountNumber: ''
   });
@@ -892,17 +901,15 @@ export default function UserProfileModal({
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase">Delivery Zone</label>
-                          <select
+                          <label id="profile-zone-label" className="block text-[10px] font-bold text-slate-500 uppercase">Delivery Zone</label>
+                          <Select
+                            size="sm"
+                            aria-labelledby="profile-zone-label"
                             value={newAddress.zone}
-                            onChange={e => setNewAddress({ ...newAddress, zone: e.target.value })}
-                            className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121a24] text-xs text-slate-800 dark:text-white rounded-md focus:outline-hidden"
-                          >
-                            <option value="Downtown Yangon">Downtown Yangon</option>
-                            <option value="Yankin">Yankin</option>
-                            <option value="Bahan">Bahan</option>
-                            <option value="Hlaing">Hlaing</option>
-                          </select>
+                            onChange={(zone) => setNewAddress({ ...newAddress, zone })}
+                            options={DELIVERY_ZONES}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121a24] text-slate-800 dark:text-white rounded-md"
+                          />
                         </div>
                         <div className="sm:col-span-2">
                           <label className="block text-[10px] font-bold text-slate-500 uppercase">Street Address</label>
@@ -1045,18 +1052,15 @@ export default function UserProfileModal({
                       <h5 className="font-semibold text-xs text-sky-500 dark:text-sky-400 uppercase tracking-widest">Add Local Payment Options</h5>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase">Provider Type</label>
-                          <select
+                          <label id="payment-provider-label" className="block text-[10px] font-bold text-slate-500 uppercase">Provider Type</label>
+                          <Select
+                            size="sm"
+                            aria-labelledby="payment-provider-label"
                             value={newPayment.type}
-                            onChange={e => setNewPayment({ ...newPayment, type: e.target.value })}
-                            className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121a24] text-xs text-slate-800 dark:text-white rounded-md focus:outline-hidden"
-                          >
-                            <option value="kbzpay">KBZPay Wallet</option>
-                            <option value="wavepay">WavePay Wallet</option>
-                            <option value="ayapay">AYA Pay Wallet</option>
-                            <option value="mmqr">MMQR (National Standard QR)</option>
-                            <option value="mpu">MPU Debit Card</option>
-                          </select>
+                            onChange={(type) => setNewPayment({ ...newPayment, type })}
+                            options={PAYMENT_PROVIDERS}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121a24] text-slate-800 dark:text-white rounded-md"
+                          />
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase">Account/Card Holder Name</label>

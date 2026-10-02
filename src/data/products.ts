@@ -218,6 +218,12 @@ export const ZONE_OPTIONS = [
   'Hlaing'
 ];
 
+/** Real delivery zones (no "All Zones"), for address forms. */
+export const DELIVERY_ZONES = ZONE_OPTIONS.filter((zone) => zone !== 'All Zones').map((zone) => ({
+  value: zone,
+  label: zone,
+}));
+
 export interface ZoneDeliveryInfo {
   zone: string;
   status: 'normal' | 'delayed' | 'suspended';
