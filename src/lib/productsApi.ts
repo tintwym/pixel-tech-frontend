@@ -81,6 +81,7 @@ function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
   return {
     // Keep stable local ids when names match so demo features (Buy Again, restock sync) work.
     id: local?.id ?? String(api.id),
+    apiId: String(api.id),
     name,
     description: api.description?.trim() || local?.description || '',
     category: inferCategory(name, local),

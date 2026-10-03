@@ -50,6 +50,8 @@ export type FeaturesRestriction =
 
 export interface GroceryItem {
   id: string;
+  /** Backend product UUID; absent for the offline fallback catalog. */
+  apiId?: string;
   name: string;
   description: string;
   category: string;
