@@ -149,7 +149,7 @@ export default function CatalogSearchBar({
         id="grocery-search"
         type="text"
         value={value}
-        placeholder='Search, or ask AI: “phone with great camera under 4M”'
+        placeholder="Search or ask AI…"
         aria-label="Search products or ask Pixel AI"
         onFocus={() => setPanelOpen(true)}
         onChange={(e) => {

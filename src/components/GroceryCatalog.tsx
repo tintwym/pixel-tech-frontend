@@ -328,13 +328,24 @@ export default function GroceryCatalog({
   };
 
   const selectTriggerClass =
-    'w-full min-h-11 px-3 py-2.5 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-sm text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors';
+    'w-full min-h-11 px-2.5 py-2.5 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-sm text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors';
 
   const brandOptions = [
-    { value: 'All Brands', label: 'All brands' },
+    { value: 'All Brands', label: 'Brand' },
     ...availableBrands.map((brand) => ({ value: brand, label: brand })),
   ];
   const categoryOptions = [
+    { value: 'All Categories', label: 'Category' },
+    ...availableCategories.map((category) => ({
+      value: category,
+      label: category,
+    })),
+  ];
+  const desktopBrandOptions = [
+    { value: 'All Brands', label: 'All brands' },
+    ...availableBrands.map((brand) => ({ value: brand, label: brand })),
+  ];
+  const desktopCategoryOptions = [
     { value: 'All Categories', label: 'All categories' },
     ...availableCategories.map((category) => ({
       value: category,
@@ -359,8 +370,11 @@ export default function GroceryCatalog({
           </p>
         </div>
         <p className="hidden sm:block text-xs font-medium text-[#64748b] dark:text-[#8a9eb0]">
-          {filteredProducts.length} item{filteredProducts.length === 1 ? '' : 's'}
-          {zoneDeliveryInfo.status === 'delayed' ? ` · +${zoneDeliveryInfo.delayMinutes}m delay in ${selectedZone}` : ''}
+          {`${filteredProducts.length} ${filteredProducts.length === 1 ? 'item' : 'items'}${
+            selectedZone !== 'All Zones' && zoneDeliveryInfo.status === 'delayed'
+              ? ` · +${zoneDeliveryInfo.delayMinutes}m delay in ${selectedZone}`
+              : ''
+          }`}
         </p>
       </div>
 
@@ -394,14 +408,14 @@ export default function GroceryCatalog({
         />
 
         {/* Mobile: Brand / Category / Filters */}
-        <div className="grid grid-cols-3 gap-2 md:hidden">
+        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 md:hidden">
           <Select
             id="brand-select-mobile"
             aria-label="Brand"
             value={selectedBrand}
             onChange={setSelectedBrand}
             options={brandOptions}
-            icon={<Tag className="w-3.5 h-3.5 text-[#0ea5e9] shrink-0" />}
+            size="sm"
             className={selectTriggerClass}
           />
           <Select
@@ -410,23 +424,23 @@ export default function GroceryCatalog({
             value={selectedCategory}
             onChange={setSelectedCategory}
             options={categoryOptions}
-            icon={<LayoutGrid className="w-3.5 h-3.5 text-[#0ea5e9] shrink-0" />}
+            size="sm"
             className={selectTriggerClass}
           />
           <button
             type="button"
             id="filters-open-mobile"
             onClick={() => setFiltersOpen(true)}
-            className={`relative min-h-11 px-3 py-2.5 rounded-2xl border text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+            className={`relative min-h-11 min-w-11 px-3 rounded-2xl border inline-flex items-center justify-center transition-colors cursor-pointer ${
               sheetFiltersActive
                 ? 'border-[#0284c7]/40 bg-[#e0f2fe]/70 text-[#0284c7] dark:border-sky-400/40 dark:bg-sky-500/15 dark:text-sky-300'
                 : 'border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35'
             }`}
+            aria-label="Filters"
             aria-haspopup="dialog"
             aria-expanded={filtersOpen}
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
-            Filters
+            <SlidersHorizontal className="w-4 h-4 shrink-0" />
             {sheetFiltersActive && (
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#0284c7] dark:bg-sky-400" aria-hidden />
             )}
@@ -440,7 +454,7 @@ export default function GroceryCatalog({
             aria-label="Brand"
             value={selectedBrand}
             onChange={setSelectedBrand}
-            options={brandOptions}
+            options={desktopBrandOptions}
             icon={<Tag className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
             className="min-w-40 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
           />
@@ -450,7 +464,7 @@ export default function GroceryCatalog({
             aria-label="Category"
             value={selectedCategory}
             onChange={setSelectedCategory}
-            options={categoryOptions}
+            options={desktopCategoryOptions}
             icon={<LayoutGrid className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
             className="min-w-44 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
           />
@@ -481,12 +495,13 @@ export default function GroceryCatalog({
       </div>
 
       {/* Mobile clear + count */}
-      <div className="flex items-center justify-between gap-3 min-h-5 md:hidden -mt-4">
+      <div className="flex items-center justify-between gap-3 md:hidden">
         <p className="text-xs font-medium text-[#64748b] dark:text-[#8a9eb0]">
-          {filteredProducts.length} item{filteredProducts.length === 1 ? '' : 's'}
-          {zoneDeliveryInfo.status === 'delayed'
-            ? ` · +${zoneDeliveryInfo.delayMinutes}m in ${selectedZone}`
-            : ''}
+          {`${filteredProducts.length} ${filteredProducts.length === 1 ? 'item' : 'items'}${
+            selectedZone !== 'All Zones' && zoneDeliveryInfo.status === 'delayed'
+              ? ` · +${zoneDeliveryInfo.delayMinutes}m in ${selectedZone}`
+              : ''
+          }`}
         </p>
         {filtersActive && (
           <button
@@ -651,7 +666,7 @@ export default function GroceryCatalog({
                   ease: [0.22, 1, 0.36, 1],
                 }}
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="group flex flex-col bg-white/90 dark:bg-[#121a24] rounded-2xl overflow-hidden shadow-market hover:shadow-market-hover transition-shadow duration-300"
+                className="group flex flex-col bg-white/95 dark:bg-[#121a24] rounded-[1.35rem] overflow-hidden border border-[#0284c7]/08 dark:border-white/8 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] hover:shadow-[0_16px_32px_-14px_rgba(2,132,199,0.22)] transition-shadow duration-300"
               >
                 <button
                   type="button"
@@ -693,10 +708,10 @@ export default function GroceryCatalog({
                     onClick={() => setDetailsItem(item)}
                     className="min-h-0 text-left cursor-pointer"
                   >
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-[#0284c7] dark:text-sky-400">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#0284c7] dark:text-sky-400">
                       {item.brand} · {item.category}
                     </p>
-                    <h3 className="mt-0.5 font-display font-semibold text-[15px] sm:text-base text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2">
+                    <h3 className="mt-1 font-display font-semibold text-[15px] sm:text-base text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2">
                       {item.name}
                     </h3>
                     <p className="mt-1 text-[11px] text-[#64748b] dark:text-[#8a9eb0]">

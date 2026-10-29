@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Bell, ShoppingCart, Moon, Sun, MapPin, Home,
-  FileText, LogIn, Monitor, Cpu, ArrowDown, LayoutGrid, UserRound
+  FileText, LogIn, Monitor, Cpu, ArrowDown, LayoutGrid, UserRound,
+  ChevronRight, Package, Truck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -127,12 +128,14 @@ export default function Storefront() {
 
   // Cycle: System (auto) → Light → Dark → System
   const toggleTheme = () => {
-    setThemePref((prev) => {
-      const next: ThemePref =
-        prev === 'system' ? 'light' : prev === 'light' ? 'dark' : 'system';
-      window.localStorage.setItem(THEME_KEY, next);
-      return next;
-    });
+    setThemePreference(
+      themePref === 'system' ? 'light' : themePref === 'light' ? 'dark' : 'system'
+    );
+  };
+
+  const setThemePreference = (next: ThemePref) => {
+    window.localStorage.setItem(THEME_KEY, next);
+    setThemePref(next);
   };
 
   const themeLabel =
@@ -156,8 +159,8 @@ export default function Storefront() {
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [celebratingOrder, setCelebratingOrder] = useState<Order | null>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
-  /** Mobile bottom tab — mirrors iOS: Home · Products · Cart · Profile */
-  const [mobileTab, setMobileTab] = useState<'home' | 'products' | 'cart' | 'profile'>('home');
+  /** Mobile bottom tab — Home · Products · Tracking · Profile (cart lives in the header) */
+  const [mobileTab, setMobileTab] = useState<'home' | 'products' | 'tracking' | 'profile'>('home');
   const [isMobileProfileSheetOpen, setIsMobileProfileSheetOpen] = useState(false);
 
   // Core Data States
@@ -305,6 +308,9 @@ export default function Storefront() {
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const activeDeliveryCount = orders.filter(
+    (o) => o.status !== 'delivered' && o.status !== 'cancelled',
+  ).length;
 
   const goMobileHome = () => {
     setMobileTab('home');
@@ -333,17 +339,41 @@ export default function Storefront() {
   };
 
   const goMobileCart = () => {
-    setMobileTab('cart');
+    setMobileTab((tab) => (tab === 'tracking' || tab === 'profile' ? 'home' : tab));
     setIsProfileOpen(false);
     setIsMobileProfileSheetOpen(false);
     setIsNotificationOpen(false);
+    setActiveTrackingOrder(null);
     setIsCartOpen(true);
+  };
+
+  const goMobileTracking = () => {
+    setMobileTab('tracking');
+    setIsCartOpen(false);
+    setIsProfileOpen(false);
+    setIsMobileProfileSheetOpen(false);
+    setIsNotificationOpen(false);
+    setIsOrderDetailsOpen(false);
+    const trackable =
+      orders.find(
+        (o) =>
+          o.status !== 'delivered' &&
+          o.status !== 'cancelled'
+      ) ?? orders[0];
+    if (trackable) {
+      setActiveTrackingOrder(trackable);
+    } else {
+      setActiveTrackingOrder(null);
+      handleAddToast('No deliveries yet', 'Place an order to track it here.', 'info');
+      setMobileTab('home');
+    }
   };
 
   const goMobileProfile = () => {
     setMobileTab('profile');
     setIsCartOpen(false);
     setIsNotificationOpen(false);
+    setActiveTrackingOrder(null);
     setIsMobileProfileSheetOpen(true);
   };
 
@@ -351,15 +381,6 @@ export default function Storefront() {
     setIsMobileProfileSheetOpen(false);
     setMobileTab((tab) => (tab === 'profile' ? 'home' : tab));
   };
-
-  const themeGlyph =
-    themePref === 'system' ? (
-      <Monitor className="w-5 h-5 text-[#0284c7]" />
-    ) : isDarkMode ? (
-      <Sun className="w-5 h-5 text-amber-400" />
-    ) : (
-      <Moon className="w-5 h-5 text-[#64748b]" />
-    );
 
   const handleSignOut = () => {
     storeToken(null);
@@ -678,8 +699,8 @@ export default function Storefront() {
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#0284c7] text-white flex items-center justify-center ring-1 ring-[#0284c7]/20 shadow-market">
               <Cpu className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div className="hidden min-[380px]:block">
-              <h1 className="font-display font-semibold text-lg sm:text-xl tracking-tight leading-none text-[#0f172a] dark:text-[#e7eef5]">
+            <div>
+              <h1 className="font-display font-semibold text-base sm:text-xl tracking-tight leading-none text-[#0f172a] dark:text-[#e7eef5]">
                 Pixel Tech
               </h1>
               <span className="text-[10px] font-medium text-[#64748b] dark:text-[#8a9eb0] block mt-0.5">
@@ -705,9 +726,10 @@ export default function Storefront() {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Tablet/desktop extras — mobile keeps cart in header; tracking is a bottom tab */}
             <button
               onClick={() => setIsOrderDetailsOpen(true)}
-              className="p-2 sm:px-3 sm:py-1.5 bg-white/70 hover:bg-white dark:bg-[#121a24] dark:hover:bg-[#1a242f] border border-[#0284c7]/12 dark:border-white/10 text-[#0f172a] dark:text-[#e7eef5] font-semibold text-xs rounded-2xl flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="hidden sm:flex p-2 sm:px-3 sm:py-1.5 bg-white/70 hover:bg-white dark:bg-[#121a24] dark:hover:bg-[#1a242f] border border-[#0284c7]/12 dark:border-white/10 text-[#0f172a] dark:text-[#e7eef5] font-semibold text-xs rounded-2xl items-center gap-1.5 cursor-pointer transition-colors"
               title="View past order receipts & reorder"
             >
               <FileText className="w-4 h-4 text-[#0ea5e9]" />
@@ -732,7 +754,7 @@ export default function Storefront() {
             <button
               id="notif-toggle-btn"
               onClick={() => setIsNotificationOpen(true)}
-              className="p-2 rounded-2xl border border-[#0284c7]/12 dark:border-white/10 hover:bg-white/80 dark:hover:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] relative cursor-pointer"
+              className="hidden sm:inline-flex p-2 rounded-2xl border border-[#0284c7]/12 dark:border-white/10 hover:bg-white/80 dark:hover:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] relative cursor-pointer"
               aria-label="Open notifications"
             >
               <Bell className="w-4.5 h-4.5" />
@@ -744,14 +766,14 @@ export default function Storefront() {
             <button
               id="cart-toggle-btn"
               onClick={goMobileCart}
-              className="p-2 sm:px-3.5 sm:py-2 bg-[#0284c7] text-white font-semibold rounded-2xl hover:bg-[#0ea5e9] transition-colors relative flex items-center gap-1.5 cursor-pointer shadow-market"
+              className="inline-flex p-2.5 sm:px-3.5 sm:py-2 bg-[#0284c7] text-white font-semibold rounded-2xl hover:bg-[#0ea5e9] active:scale-[0.97] transition-[colors,transform] relative items-center gap-1.5 cursor-pointer shadow-market"
               aria-label="View shopping cart"
             >
               <ShoppingCart className="w-4.5 h-4.5" />
               <span className="hidden sm:inline text-xs font-semibold tracking-wide">Cart</span>
               {cartCount > 0 && (
-                <span className="bg-white text-[#0284c7] text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-                  {cartCount}
+                <span className="absolute -top-1.5 -right-1.5 sm:static sm:ml-0 min-w-5 h-5 px-1.5 bg-white text-[#0284c7] text-[10px] font-bold rounded-full inline-flex items-center justify-center">
+                  {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
             </button>
@@ -812,7 +834,7 @@ export default function Storefront() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <a
                 href="#catalog-section"
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#0ea5e9] px-5 py-3 text-sm font-semibold text-white shadow-market hover:bg-[#38bdf8] transition-colors"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#0ea5e9] px-5 py-3 text-sm font-semibold text-white shadow-market hover:bg-[#38bdf8] active:scale-[0.98] transition-[colors,transform]"
               >
                 Shop devices
                 <ArrowDown className="w-4 h-4" />
@@ -873,7 +895,7 @@ export default function Storefront() {
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
-            className="fixed bottom-4 inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:max-w-xl z-999 rounded-2xl bg-[#0f172a]/95 backdrop-blur-md text-white p-4 shadow-market border border-white/10 flex flex-col sm:flex-row items-start sm:items-center gap-3"
+            className="fixed bottom-[5.5rem] sm:bottom-4 inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:max-w-xl z-999 rounded-2xl bg-[#0f172a]/95 backdrop-blur-md text-white p-4 shadow-market border border-white/10 flex flex-col sm:flex-row items-start sm:items-center gap-3"
           >
             <p className="text-xs text-white/80 leading-relaxed flex-1">
               We use your delivery details to fulfill orders and process local payments. By continuing, you agree to our privacy policy.
@@ -925,64 +947,114 @@ export default function Storefront() {
         }}
       />
 
-      {/* Mobile Profile sheet — theme lives under Profile (not header) */}
+      {/* Mobile Profile — full settings-style screen (not a short action sheet) */}
       <AnimatePresence>
         {isMobileProfileSheetOpen && (
           <motion.div
-            className="sm:hidden fixed inset-0 z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            className="sm:hidden fixed inset-0 z-50 flex flex-col bg-[#eef4f8] dark:bg-[#0B1220]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-profile-title"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
           >
-            <button
-              type="button"
-              className="absolute inset-0 bg-[#0B1220]/45 backdrop-blur-[2px] cursor-pointer"
-              aria-label="Close profile"
-              onClick={closeMobileProfileSheet}
-            />
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="mobile-profile-title"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="absolute inset-x-0 bottom-0 rounded-t-3xl border border-[#0284c7]/15 dark:border-white/10 bg-[#eef4f8] dark:bg-[#0B1220] shadow-market px-4 pt-3 pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.75rem))]"
-            >
-              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#0284c7]/25 dark:bg-white/20" aria-hidden />
-              <h3
+            <header className="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b border-[#0284c7]/10 dark:border-white/10 bg-[#eef4f8]/95 dark:bg-[#0B1220]/95 backdrop-blur-md">
+              <h2
                 id="mobile-profile-title"
-                className="font-display text-lg font-semibold text-[#0f172a] dark:text-[#e7eef5] mb-4"
+                className="font-display text-xl font-semibold text-[#0f172a] dark:text-[#e7eef5]"
               >
                 Profile
-              </h3>
-
+              </h2>
               <button
                 type="button"
-                onClick={toggleTheme}
-                aria-label={themeLabel}
-                className="w-full flex items-center gap-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/90 dark:bg-[#121a24] px-3.5 py-3 text-left cursor-pointer hover:border-[#0284c7]/35 transition-colors"
+                onClick={closeMobileProfileSheet}
+                className="px-3 py-1.5 rounded-full text-sm font-semibold text-[#0284c7] dark:text-sky-400 hover:bg-[#0284c7]/10 cursor-pointer"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white dark:bg-[#0B1220] border border-[#0284c7]/12 dark:border-white/10 shadow-sm">
-                  {themeGlyph}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-[#0f172a] dark:text-[#e7eef5]">
-                    Appearance
-                  </span>
-                  <span className="block text-xs text-[#64748b] dark:text-[#8a9eb0]">
-                    {themePref === 'system'
-                      ? `System (${isDarkMode ? 'Dark' : 'Light'})`
-                      : themePref === 'dark'
-                        ? 'Dark'
-                        : 'Light'}
-                    {' · '}tap to cycle
-                  </span>
-                </span>
+                Done
               </button>
+            </header>
 
-              <div className="mt-3 space-y-2">
+            <div className="flex-1 overflow-y-auto px-4 py-6 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))]">
+              {/* Identity */}
+              <div className="flex flex-col items-center text-center mb-8">
+                {isSignedIn ? (
+                  profile.avatarUrl ? (
+                    <img
+                      src={profile.avatarUrl}
+                      alt=""
+                      className="h-20 w-20 rounded-full object-cover ring-2 ring-white dark:ring-white/10 shadow-sm"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e0f2fe] text-2xl font-semibold text-[#0284c7]">
+                      {(profile.name || 'P').charAt(0).toUpperCase()}
+                    </span>
+                  )
+                ) : (
+                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white dark:bg-[#121a24] border border-[#0284c7]/15 dark:border-white/10">
+                    <UserRound className="w-9 h-9 text-[#0284c7]" />
+                  </span>
+                )}
+                <p className="mt-3 font-display text-lg font-semibold text-[#0f172a] dark:text-[#e7eef5]">
+                  {isSignedIn ? profile.name : 'Guest'}
+                </p>
+                <p className="text-sm text-[#64748b] dark:text-[#8a9eb0]">
+                  {isSignedIn ? profile.email : 'Sign in to sync cart & orders'}
+                </p>
+              </div>
+
+              {/* Appearance — segmented control */}
+              <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-[#64748b] dark:text-[#8a9eb0]">
+                Appearance
+              </p>
+              <div
+                className="mb-6 grid grid-cols-3 gap-1 rounded-2xl bg-[#dbe7f0]/80 dark:bg-[#121a24] p-1"
+                role="radiogroup"
+                aria-label="Appearance"
+              >
+                {(
+                  [
+                    { id: 'system' as const, label: 'System', icon: Monitor },
+                    { id: 'light' as const, label: 'Light', icon: Sun },
+                    { id: 'dark' as const, label: 'Dark', icon: Moon },
+                  ]
+                ).map((opt) => {
+                  const active = themePref === opt.id;
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setThemePreference(opt.id)}
+                      className={`flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2 text-[11px] font-semibold transition-colors cursor-pointer ${
+                        active
+                          ? 'bg-white text-[#0284c7] shadow-sm dark:bg-[#1a242f] dark:text-sky-300'
+                          : 'text-[#64748b] dark:text-[#8a9eb0]'
+                      }`}
+                    >
+                      <Icon
+                        className={`w-4.5 h-4.5 ${
+                          active
+                            ? opt.id === 'dark'
+                              ? 'text-slate-700 dark:text-sky-300'
+                              : opt.id === 'light'
+                                ? 'text-amber-500'
+                                : 'text-[#0284c7]'
+                            : ''
+                        }`}
+                      />
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Grouped links */}
+              <div className="overflow-hidden rounded-2xl bg-white dark:bg-[#121a24] border border-[#0284c7]/10 dark:border-white/10">
                 {isSignedIn ? (
                   <>
                     <button
@@ -991,19 +1063,43 @@ export default function Storefront() {
                         setIsMobileProfileSheetOpen(false);
                         setIsProfileOpen(true);
                       }}
-                      className="w-full min-h-11 rounded-2xl bg-[#0284c7] hover:bg-[#0ea5e9] text-white text-sm font-semibold cursor-pointer transition-colors"
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
                     >
-                      Account settings
+                      <UserRound className="w-5 h-5 text-[#0284c7] shrink-0" />
+                      <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                        Account
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-[#94a3b8]" />
                     </button>
+                    <div className="mx-4 border-t border-[#0284c7]/10 dark:border-white/10" />
                     <button
                       type="button"
                       onClick={() => {
-                        handleSignOut();
-                        closeMobileProfileSheet();
+                        setIsMobileProfileSheetOpen(false);
+                        setIsOrderDetailsOpen(true);
                       }}
-                      className="w-full min-h-11 rounded-2xl border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 text-sm font-semibold cursor-pointer"
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
                     >
-                      Sign out
+                      <Package className="w-5 h-5 text-[#0284c7] shrink-0" />
+                      <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                        Orders
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-[#94a3b8]" />
+                    </button>
+                    <div className="mx-4 border-t border-[#0284c7]/10 dark:border-white/10" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileProfileSheetOpen(false);
+                        setIsNotificationOpen(true);
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
+                    >
+                      <Bell className="w-5 h-5 text-[#0284c7] shrink-0" />
+                      <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                        Notifications
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-[#94a3b8]" />
                     </button>
                   </>
                 ) : (
@@ -1013,14 +1109,30 @@ export default function Storefront() {
                       setIsMobileProfileSheetOpen(false);
                       setIsAuthOpen(true);
                     }}
-                    className="w-full min-h-11 rounded-2xl bg-[#0284c7] hover:bg-[#0ea5e9] text-white text-sm font-semibold cursor-pointer transition-colors inline-flex items-center justify-center gap-2"
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
                   >
-                    <LogIn className="w-4 h-4" />
-                    Sign in
+                    <LogIn className="w-5 h-5 text-[#0284c7] shrink-0" />
+                    <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                      Sign in
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-[#94a3b8]" />
                   </button>
                 )}
               </div>
-            </motion.div>
+
+              {isSignedIn && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleSignOut();
+                    closeMobileProfileSheet();
+                  }}
+                  className="mt-8 w-full text-center text-sm font-medium text-red-500 dark:text-red-400 cursor-pointer py-2"
+                >
+                  Sign out
+                </button>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1073,10 +1185,7 @@ export default function Storefront() {
             onUpdateProfile={setProfile}
             onAddOrder={handleAddOrder}
             onAddToast={handleAddToast}
-            onClose={() => {
-              setIsCartOpen(false);
-              setMobileTab((tab) => (tab === 'cart' ? 'products' : tab));
-            }}
+            onClose={() => setIsCartOpen(false)}
           />
         )}
       </AnimatePresence>
@@ -1089,7 +1198,10 @@ export default function Storefront() {
             onUpdateOrderStatus={handleUpdateOrderStatus}
             onAddToast={handleAddToast}
             onAddNotification={handleAddNotification}
-            onClose={() => setActiveTrackingOrder(null)}
+            onClose={() => {
+              setActiveTrackingOrder(null);
+              setMobileTab((tab) => (tab === 'tracking' ? 'home' : tab));
+            }}
           />
         )}
       </AnimatePresence>
@@ -1143,12 +1255,12 @@ export default function Storefront() {
         className="sm:hidden fixed bottom-3 inset-x-3 z-40 pb-[env(safe-area-inset-bottom)]"
         aria-label="Primary"
       >
-        <div className="mx-auto flex max-w-md items-stretch justify-between gap-1 rounded-[1.75rem] border border-black/5 bg-white/92 px-1.5 py-1.5 shadow-[0_10px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-[#121a24]/94 dark:shadow-[0_10px_40px_rgba(0,0,0,0.45)]">
+        <div className="mx-auto flex max-w-md items-stretch justify-between gap-0.5 rounded-[1.85rem] border border-[#0284c7]/10 bg-white/90 p-1.5 shadow-[0_12px_40px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-[#121a24]/94 dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
           {(
             [
               { id: 'home' as const, label: 'Home', icon: Home, onClick: goMobileHome },
               { id: 'products' as const, label: 'Products', icon: LayoutGrid, onClick: goMobileProducts },
-              { id: 'cart' as const, label: 'Cart', icon: ShoppingCart, onClick: goMobileCart },
+              { id: 'tracking' as const, label: 'Tracking', icon: Truck, onClick: goMobileTracking },
               { id: 'profile' as const, label: 'Profile', icon: UserRound, onClick: goMobileProfile },
             ]
           ).map((tab) => {
@@ -1160,21 +1272,21 @@ export default function Storefront() {
                 type="button"
                 onClick={tab.onClick}
                 aria-current={active ? 'page' : undefined}
-                className={`relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition-colors cursor-pointer ${
+                className={`relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.25rem] px-1 py-1.5 transition-[color,background-color,transform] active:scale-[0.97] cursor-pointer ${
                   active
-                    ? 'bg-[#e8f0f6] text-[#0284c7] dark:bg-sky-500/15 dark:text-sky-300'
+                    ? 'bg-[#e0f2fe] text-[#0284c7] dark:bg-sky-500/20 dark:text-sky-300'
                     : 'text-[#64748b] hover:text-[#0284c7] dark:text-[#8a9eb0] dark:hover:text-sky-300'
                 }`}
               >
                 <span className="relative">
-                  <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 2} />
-                  {tab.id === 'cart' && cartCount > 0 && (
-                    <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-[#0284c7] px-1 text-center text-[9px] font-bold leading-4 text-white">
-                      {cartCount > 99 ? '99+' : cartCount}
+                  <Icon className="h-[1.15rem] w-[1.15rem]" strokeWidth={active ? 2.5 : 2} />
+                  {tab.id === 'tracking' && activeDeliveryCount > 0 && (
+                    <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-[#0284c7] px-1 text-center text-[9px] font-bold leading-4 text-white ring-2 ring-white dark:ring-[#121a24]">
+                      {activeDeliveryCount > 99 ? '99+' : activeDeliveryCount}
                     </span>
                   )}
                 </span>
-                <span className={`text-[10px] leading-none ${active ? 'font-bold' : 'font-semibold'}`}>
+                <span className={`text-[10px] leading-none tracking-tight ${active ? 'font-bold' : 'font-semibold'}`}>
                   {tab.label}
                 </span>
               </button>
