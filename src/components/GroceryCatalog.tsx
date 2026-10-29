@@ -18,7 +18,8 @@ interface GroceryCatalogProps {
     qty: number,
     isSub: boolean,
     freq?: 'weekly' | 'biweekly' | 'monthly',
-    selectedColor?: string
+    selectedColor?: string,
+    selectedStorage?: string
   ) => boolean | void;
   selectedZone: string;
   setSelectedZone: (zone: string) => void;
@@ -316,7 +317,7 @@ export default function GroceryCatalog({
             Device catalog
           </h2>
           <p className="mt-1 text-sm text-[#64748b] dark:text-[#8a9eb0]">
-            Mobiles, laptops, and accessories ready for Yangon delivery.
+            Newest models first — mobiles, laptops, and accessories for Yangon delivery.
           </p>
         </div>
         <p className="text-xs font-medium text-[#64748b] dark:text-[#8a9eb0]">

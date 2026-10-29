@@ -35,6 +35,7 @@ export type FeaturesRestriction =
   | '1TB'
   | 'A18'
   | 'A18 Pro'
+  | 'A19'
   | 'Pro Camera'
   | 'S Pen'
   | 'M3'
@@ -69,6 +70,8 @@ export interface GroceryItem {
   isSubscriptionAvailable: boolean;
   rating: number;
   unit: string; // e.g., "500g", "1kg", "1 liter", "dozen"
+  /** Optional override — higher shows earlier. Otherwise inferred from model name. */
+  catalogPriority?: number;
 }
 
 export interface CartItem {
@@ -79,6 +82,8 @@ export interface CartItem {
   /** Finish/color id when the shopper picked one in product details (e.g. starwhite). */
   selectedColor?: string;
   selectedColorLabel?: string;
+  /** Storage tier for smartphones (e.g. 256GB). */
+  selectedStorage?: string;
 }
 
 export interface DeliveryAddress {

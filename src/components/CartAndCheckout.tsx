@@ -23,8 +23,19 @@ import {
 interface CartAndCheckoutProps {
   cart: CartItem[];
   products: GroceryItem[];
-  onUpdateCartQty: (itemId: string, isSub: boolean, qty: number, selectedColor?: string) => void;
-  onRemoveFromCart: (itemId: string, isSub: boolean, selectedColor?: string) => void;
+  onUpdateCartQty: (
+    itemId: string,
+    isSub: boolean,
+    qty: number,
+    selectedColor?: string,
+    selectedStorage?: string
+  ) => void;
+  onRemoveFromCart: (
+    itemId: string,
+    isSub: boolean,
+    selectedColor?: string,
+    selectedStorage?: string
+  ) => void;
   onClearCart: () => void;
   profile: UserProfile;
   onUpdateProfile: (updatedProfile: UserProfile | ((prev: UserProfile) => UserProfile)) => void;
@@ -437,12 +448,14 @@ export default function CartAndCheckout({
 
       const snapshotItems = cart.map(line => {
         const live = products.find(g => g.id === line.item.id) || line.item;
-        const colorSuffix = line.selectedColorLabel ? ` · ${line.selectedColorLabel}` : '';
+        const opts = [line.selectedColorLabel, line.selectedStorage].filter(Boolean).join(' · ');
+        const suffix = opts ? ` · ${opts}` : '';
         return {
           ...line,
           item: {
             ...live,
-            name: `${live.name}${colorSuffix}`,
+            name: `${live.name}${suffix}`,
+            price: line.item.price,
             imageUrl: line.item.imageUrl || live.imageUrl,
           },
         };
@@ -616,7 +629,7 @@ export default function CartAndCheckout({
                 <div className="space-y-3">
                   {cart.map((item) => (
                     <div
-                      key={`${item.item.id}-${item.isSubscription}-${item.selectedColor || 'default'}`}
+                      key={`${item.item.id}-${item.isSubscription}-${item.selectedColor || 'default'}-${item.selectedStorage || 'std'}`}
                       className="p-3 bg-white dark:bg-[#121a24] border border-slate-100 dark:border-white/5 rounded-xl flex gap-3 relative"
                     >
                       <ProductImage
@@ -631,9 +644,9 @@ export default function CartAndCheckout({
                           </h4>
                         </div>
                         <p className="text-xs text-slate-400 font-medium">
-                          {item.selectedColorLabel
-                            ? `${item.selectedColorLabel} · ${item.item.unit}`
-                            : `Unit: ${item.item.unit}`}
+                          {[item.selectedColorLabel, item.selectedStorage, item.item.unit]
+                            .filter(Boolean)
+                            .join(' · ') || `Unit: ${item.item.unit}`}
                         </p>
 
                         <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-50 dark:border-white/5">
@@ -645,7 +658,8 @@ export default function CartAndCheckout({
                                   item.item.id,
                                   item.isSubscription,
                                   item.quantity - 1,
-                                  item.selectedColor
+                                  item.selectedColor,
+                                  item.selectedStorage
                                 )
                               }
                               className="px-2 py-0.5 font-bold hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -659,7 +673,8 @@ export default function CartAndCheckout({
                                   item.item.id,
                                   item.isSubscription,
                                   item.quantity + 1,
-                                  item.selectedColor
+                                  item.selectedColor,
+                                  item.selectedStorage
                                 )
                               }
                               className="px-2 py-0.5 font-bold hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -690,7 +705,12 @@ export default function CartAndCheckout({
                       {/* Remove button */}
                       <button
                         onClick={() =>
-                          onRemoveFromCart(item.item.id, item.isSubscription, item.selectedColor)
+                          onRemoveFromCart(
+                            item.item.id,
+                            item.isSubscription,
+                            item.selectedColor,
+                            item.selectedStorage
+                          )
                         }
                         className="absolute top-3 right-3 p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-[#1a242f] hover:text-slate-600 dark:hover:text-white transition-colors"
                         aria-label="Remove item"
@@ -1348,12 +1368,14 @@ export default function CartAndCheckout({
                 <div className="space-y-1.5 text-xs">
                   {cart.map(itm => (
                     <div
-                      key={`${itm.item.id}-${itm.isSubscription}-${itm.selectedColor || 'default'}`}
+                      key={`${itm.item.id}-${itm.isSubscription}-${itm.selectedColor || 'default'}-${itm.selectedStorage || 'std'}`}
                       className="flex justify-between items-baseline"
                     >
                       <span className="text-slate-600 dark:text-slate-300 truncate max-w-xs">
                         {itm.quantity}x {itm.item.name}
-                        {itm.selectedColorLabel ? ` · ${itm.selectedColorLabel}` : ''}
+                        {[itm.selectedColorLabel, itm.selectedStorage].filter(Boolean).length
+                          ? ` · ${[itm.selectedColorLabel, itm.selectedStorage].filter(Boolean).join(' · ')}`
+                          : ''}
                       </span>
                       <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
                         {formatPrice(itm.item.price * itm.quantity)}

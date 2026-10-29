@@ -148,7 +148,7 @@ export default function Storefront() {
     'p1': 5, // iPhone 16 Pro
     'p2': 4, // iPhone 16
     'p8': 3, // AirPods Pro 2
-    'p5': 2 // MacBook Air M3
+    'p5': 2 // MacBook Air
   });
 
   // Customer Profile Initialization with preloaded test parameters
@@ -347,18 +347,21 @@ export default function Storefront() {
     line: CartItem,
     itemId: string,
     isSub: boolean,
-    selectedColor?: string
+    selectedColor?: string,
+    selectedStorage?: string
   ) =>
     line.item.id === itemId &&
     line.isSubscription === isSub &&
-    (line.selectedColor || '') === (selectedColor || '');
+    (line.selectedColor || '') === (selectedColor || '') &&
+    (line.selectedStorage || '') === (selectedStorage || '');
 
   const handleAddToCart = (
     item: GroceryItem,
     qty: number,
     isSub: boolean,
     freq?: 'weekly' | 'biweekly' | 'monthly',
-    selectedColor?: string
+    selectedColor?: string,
+    selectedStorage?: string
   ): boolean => {
     const live = products.find(g => g.id === item.id) || item;
     if (live.stock <= 0 || qty <= 0) return false;
@@ -368,14 +371,21 @@ export default function Storefront() {
     const colorMeta = colors.find((c) => c.id === colorKey);
     const lineItem: GroceryItem = {
       ...live,
+      price: item.price || live.price,
       imageUrl: gallery[0] || live.imageUrl,
     };
 
     const otherQty = cart
-      .filter((i) => i.item.id === live.id && !sameCartLine(i, live.id, isSub, selectedColor))
+      .filter(
+        (i) =>
+          i.item.id === live.id &&
+          !sameCartLine(i, live.id, isSub, selectedColor, selectedStorage)
+      )
       .reduce((sum, i) => sum + i.quantity, 0);
     const maxForThisLine = Math.max(0, live.stock - otherQty);
-    const existing = cart.find((i) => sameCartLine(i, live.id, isSub, selectedColor));
+    const existing = cart.find((i) =>
+      sameCartLine(i, live.id, isSub, selectedColor, selectedStorage)
+    );
     const currentLineQty = existing?.quantity ?? 0;
     if (maxForThisLine <= 0 || currentLineQty >= maxForThisLine) return false;
 
@@ -390,23 +400,30 @@ export default function Storefront() {
 
     setCart(prev => {
       const other = prev
-        .filter((i) => i.item.id === live.id && !sameCartLine(i, live.id, isSub, selectedColor))
+        .filter(
+          (i) =>
+            i.item.id === live.id &&
+            !sameCartLine(i, live.id, isSub, selectedColor, selectedStorage)
+        )
         .reduce((sum, i) => sum + i.quantity, 0);
       const maxLine = Math.max(0, live.stock - other);
       if (maxLine <= 0) return prev;
 
-      const line = prev.find((i) => sameCartLine(i, live.id, isSub, selectedColor));
+      const line = prev.find((i) =>
+        sameCartLine(i, live.id, isSub, selectedColor, selectedStorage)
+      );
       if (line) {
         const nextQty = Math.min(maxLine, line.quantity + qty);
         if (nextQty === line.quantity) return prev;
         return prev.map((i) =>
-          sameCartLine(i, live.id, isSub, selectedColor)
+          sameCartLine(i, live.id, isSub, selectedColor, selectedStorage)
             ? {
                 ...i,
                 item: lineItem,
                 quantity: nextQty,
                 selectedColor: colorMeta?.id || selectedColor,
                 selectedColorLabel: colorMeta?.label,
+                selectedStorage,
               }
             : i
         );
@@ -420,29 +437,41 @@ export default function Storefront() {
           frequency: freq,
           selectedColor: colorMeta?.id || selectedColor,
           selectedColorLabel: colorMeta?.label,
+          selectedStorage,
         },
       ];
     });
     return true;
   };
 
-  const handleUpdateCartQty = (itemId: string, isSub: boolean, qty: number, selectedColor?: string) => {
+  const handleUpdateCartQty = (
+    itemId: string,
+    isSub: boolean,
+    qty: number,
+    selectedColor?: string,
+    selectedStorage?: string
+  ) => {
     if (qty <= 0) {
-      handleRemoveFromCart(itemId, isSub, selectedColor);
+      handleRemoveFromCart(itemId, isSub, selectedColor, selectedStorage);
       return;
     }
     const liveStock = products.find(g => g.id === itemId)?.stock ?? 0;
     setCart(prev => {
       const otherQty = prev
-        .filter((i) => i.item.id === itemId && !sameCartLine(i, itemId, isSub, selectedColor))
+        .filter(
+          (i) =>
+            i.item.id === itemId &&
+            !sameCartLine(i, itemId, isSub, selectedColor, selectedStorage)
+        )
         .reduce((sum, i) => sum + i.quantity, 0);
       const maxForThisLine = Math.max(0, liveStock - otherQty);
       return prev.map((i) =>
-        sameCartLine(i, itemId, isSub, selectedColor)
+        sameCartLine(i, itemId, isSub, selectedColor, selectedStorage)
           ? {
               ...i,
               item: {
                 ...(products.find((g) => g.id === itemId) || i.item),
+                price: i.item.price,
                 imageUrl: i.item.imageUrl,
               },
               quantity: Math.min(maxForThisLine, qty),
@@ -452,8 +481,15 @@ export default function Storefront() {
     });
   };
 
-  const handleRemoveFromCart = (itemId: string, isSub: boolean, selectedColor?: string) => {
-    setCart((prev) => prev.filter((i) => !sameCartLine(i, itemId, isSub, selectedColor)));
+  const handleRemoveFromCart = (
+    itemId: string,
+    isSub: boolean,
+    selectedColor?: string,
+    selectedStorage?: string
+  ) => {
+    setCart((prev) =>
+      prev.filter((i) => !sameCartLine(i, itemId, isSub, selectedColor, selectedStorage))
+    );
     handleAddToast('Item Removed', 'Product subtracted from cart.', 'info');
   };
 

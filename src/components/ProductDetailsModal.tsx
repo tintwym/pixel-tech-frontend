@@ -6,6 +6,24 @@ import { AnimatePresence, motion } from 'motion/react';
 import { GroceryItem } from '@/types';
 import ProductImage from '@/components/ProductImage';
 import { resolveProductGallery } from '@/lib/productGallery';
+import {
+  MOBILE_STORAGE_OPTIONS,
+  defaultMobileStorage,
+  isSmartphoneCategory,
+  mobileStoragePrice,
+} from '@/data/mobileOptions';
+import {
+  LAPTOP_MEMORY_OPTIONS,
+  LAPTOP_STORAGE_OPTIONS,
+  defaultLaptopMemory,
+  defaultLaptopSize,
+  defaultLaptopStorage,
+  formatLaptopConfig,
+  isLaptopCategory,
+  laptopConfigPrice,
+  laptopSizeOptions,
+  type LaptopMemory,
+} from '@/data/laptopOptions';
 
 interface ProductDetailsModalProps {
   item: GroceryItem | null;
@@ -16,7 +34,8 @@ interface ProductDetailsModalProps {
     qty: number,
     isSub: boolean,
     freq?: 'weekly' | 'biweekly' | 'monthly',
-    selectedColor?: string
+    selectedColor?: string,
+    selectedStorage?: string
   ) => boolean | void;
   onAddToast: (title: string, msg: string, type: 'success' | 'warning' | 'info') => void;
 }
@@ -29,27 +48,59 @@ export default function ProductDetailsModal({
   onAddToast,
 }: ProductDetailsModalProps) {
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
+  const [selectedStorage, setSelectedStorage] = useState<string>('256GB');
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedMemory, setSelectedMemory] = useState<LaptopMemory>('16GB');
   const [activeIndex, setActiveIndex] = useState(0);
   const [qty, setQty] = useState(1);
 
+  const isPhone = isSmartphoneCategory(item?.category);
+  const isLaptop = isLaptopCategory(item?.category);
+  const sizeOptions = useMemo(
+    () => (item && isLaptop ? laptopSizeOptions(item.name, item.imageUrls || []) : []),
+    [item, isLaptop]
+  );
+
   const { colors, gallery } = useMemo(() => {
     if (!item) return { colors: [], gallery: [] as string[] };
-    return resolveProductGallery(item.imageUrl, item.imageUrls, selectedColorId);
-  }, [item, selectedColorId]);
+    return resolveProductGallery(
+      item.imageUrl,
+      item.imageUrls,
+      selectedColorId,
+      isLaptop ? selectedSize : null
+    );
+  }, [item, selectedColorId, selectedSize, isLaptop]);
 
   const activeColor = colors.find((c) => c.id === selectedColorId) || colors[0] || null;
+  const displayPrice = item
+    ? isPhone
+      ? mobileStoragePrice(item.price, selectedStorage)
+      : isLaptop
+        ? laptopConfigPrice(item.price, selectedSize, selectedMemory, selectedStorage)
+        : item.price
+    : 0;
 
   useEffect(() => {
     if (!isOpen || !item) return;
     const next = resolveProductGallery(item.imageUrl, item.imageUrls, null);
     setSelectedColorId(next.colors[0]?.id ?? null);
+    if (isLaptopCategory(item.category)) {
+      const sizes = laptopSizeOptions(item.name, item.imageUrls || []);
+      setSelectedSize(defaultLaptopSize(item.name, sizes));
+      setSelectedMemory(defaultLaptopMemory(item.name));
+      setSelectedStorage(defaultLaptopStorage(item.name));
+    } else {
+      setSelectedSize(null);
+      setSelectedMemory('16GB');
+      setSelectedStorage(defaultMobileStorage(item.name));
+    }
     setActiveIndex(0);
     setQty(1);
   }, [isOpen, item?.id]);
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [selectedColorId]);
+  }, [selectedColorId, selectedSize]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -83,15 +134,32 @@ export default function ProductDetailsModal({
       onAddToast('Insufficient Stock', `Only ${item.stock} items left in inventory.`, 'warning');
       return;
     }
-    const colorLabel = activeColor?.label;
-    const added = onAddToCart(item, qty, false, undefined, activeColor?.id);
+    const pricedItem: GroceryItem = {
+      ...item,
+      price: displayPrice,
+      imageUrl: gallery[0] || item.imageUrl,
+    };
+    const configLabel = isLaptop
+      ? formatLaptopConfig(selectedSize, selectedMemory, selectedStorage)
+      : isPhone
+        ? selectedStorage
+        : undefined;
+    const added = onAddToCart(
+      pricedItem,
+      qty,
+      false,
+      undefined,
+      activeColor?.id,
+      configLabel
+    );
     if (added === false) {
       onAddToast('Cart limit reached', `You already have the max available stock of ${item.name}.`, 'warning');
       return;
     }
+    const bits = [activeColor?.label, configLabel].filter(Boolean).join(' · ');
     onAddToast(
       'Added to Cart',
-      colorLabel ? `${qty}× ${item.name} · ${colorLabel} added.` : `${qty}× ${item.name} added.`,
+      bits ? `${qty}× ${item.name} · ${bits} added.` : `${qty}× ${item.name} added.`,
       'success'
     );
   };
@@ -225,7 +293,7 @@ export default function ProductDetailsModal({
                   </div>
 
                   <p className="font-semibold text-[#0f172a] dark:text-[#e7eef5] tabular-nums">
-                    <span className="text-2xl tracking-tight">{item.price.toLocaleString()}</span>
+                    <span className="text-2xl tracking-tight">{displayPrice.toLocaleString()}</span>
                     <span className="ml-1.5 text-xs font-medium text-[#64748b]">MMK</span>
                   </p>
 
@@ -272,6 +340,106 @@ export default function ProductDetailsModal({
                           />
                         );
                       })}
+                    </div>
+                  </div>
+                )}
+
+                {isLaptop && sizeOptions.length > 0 && (
+                  <div>
+                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
+                      Size
+                      {selectedSize && (
+                        <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                          {selectedSize}
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Choose size">
+                      {sizeOptions.map((size) => {
+                        const selected = selectedSize === size;
+                        return (
+                          <button
+                            key={size}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => setSelectedSize(size)}
+                            className={`rounded-xl px-3.5 py-2 text-xs font-semibold border transition-colors cursor-pointer ${
+                              selected
+                                ? 'border-[#0284c7] bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                                : 'border-slate-200 dark:border-white/15 text-slate-600 dark:text-slate-300 hover:border-[#0284c7]/50'
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {isLaptop && (
+                  <div>
+                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
+                      Memory
+                      <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                        {selectedMemory}
+                      </span>
+                    </h3>
+                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Choose memory">
+                      {LAPTOP_MEMORY_OPTIONS.map((memory) => {
+                        const selected = selectedMemory === memory;
+                        return (
+                          <button
+                            key={memory}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => setSelectedMemory(memory)}
+                            className={`rounded-xl px-3.5 py-2 text-xs font-semibold border transition-colors cursor-pointer ${
+                              selected
+                                ? 'border-[#0284c7] bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                                : 'border-slate-200 dark:border-white/15 text-slate-600 dark:text-slate-300 hover:border-[#0284c7]/50'
+                            }`}
+                          >
+                            {memory}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {(isPhone || isLaptop) && (
+                  <div>
+                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
+                      Storage
+                      <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                        {selectedStorage}
+                      </span>
+                    </h3>
+                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Choose storage">
+                      {(isLaptop ? LAPTOP_STORAGE_OPTIONS : MOBILE_STORAGE_OPTIONS).map(
+                        (storage) => {
+                          const selected = selectedStorage === storage;
+                          return (
+                            <button
+                              key={storage}
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              onClick={() => setSelectedStorage(storage)}
+                              className={`rounded-xl px-3.5 py-2 text-xs font-semibold border transition-colors cursor-pointer ${
+                                selected
+                                  ? 'border-[#0284c7] bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                                  : 'border-slate-200 dark:border-white/15 text-slate-600 dark:text-slate-300 hover:border-[#0284c7]/50'
+                              }`}
+                            >
+                              {storage}
+                            </button>
+                          );
+                        }
+                      )}
                     </div>
                   </div>
                 )}

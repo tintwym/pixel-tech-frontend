@@ -12,16 +12,27 @@ const COLOR_SWATCHES: Record<string, string> = {
   white: '#f5f5f5',
   silver: '#c0c0c0',
   gold: '#d4af37',
+  lightgold: '#E8D5A3',
   blue: '#3b82f6',
+  skyblue: '#7EB6D9',
+  mistblue: '#A8C5D4',
   ultramarine: '#3b5bdb',
+  sage: '#B7C4A8',
+  lavender: '#C5B6D4',
+  glacier: '#D5E3EA',
+  burgundy: '#6B2D3C',
+  cloudwhite: '#F7F5F0',
   deserttitanium: '#C2A78A',
   naturaltitanium: '#8E8B86',
   blacktitanium: '#3C3C3C',
   whitetitanium: '#F2F1ED',
   spaceblack: '#1C1C1E',
   spacegray: '#5A5A5E',
-  midnight: '#191970',
+  midnight: '#1C2333',
   starlight: '#F5F2E8',
+  blush: '#E8B4B8',
+  citrus: '#F0C75E',
+  indigo: '#3D4F7C',
   pink: '#f9a8d4',
   purple: '#8b5cf6',
   green: '#22c55e',
@@ -35,6 +46,8 @@ const NON_COLOR_TOKENS = new Set([
   'model',
   'finish',
   'select',
+  'size',
+  'color',
   'geo',
   'av',
   'av1',
@@ -47,14 +60,34 @@ const NON_COLOR_TOKENS = new Set([
   'iphone',
   'ipad',
   'macbook',
+  'neo',
+  'air',
 ]);
 
 function titleCaseColor(id: string): string {
-  if (id === 'starwhite') return 'Starwhite';
-  if (id === 'nightsky') return 'Nightsky';
-  if (id === 'starlight') return 'Starlight';
-  if (id === 'spaceblack') return 'Space Black';
-  if (id === 'spacegray') return 'Space Gray';
+  const labels: Record<string, string> = {
+    starwhite: 'Starwhite',
+    nightsky: 'Nightsky',
+    starlight: 'Starlight',
+    spaceblack: 'Space Black',
+    spacegray: 'Space Gray',
+    mistblue: 'Mist Blue',
+    sage: 'Sage',
+    lavender: 'Lavender',
+    black: 'Black',
+    white: 'White',
+    silver: 'Silver',
+    glacier: 'Glacier',
+    burgundy: 'Burgundy',
+    cloudwhite: 'Cloud White',
+    skyblue: 'Sky Blue',
+    lightgold: 'Light Gold',
+    midnight: 'Midnight',
+    blush: 'Blush',
+    citrus: 'Citrus',
+    indigo: 'Indigo',
+  };
+  if (labels[id]) return labels[id];
   if (id.endsWith('titanium')) {
     const base = id.replace(/titanium$/, '');
     return `${base.charAt(0).toUpperCase()}${base.slice(1)} Titanium`;
@@ -71,22 +104,80 @@ function filenameFromUrl(url: string): string {
   }
 }
 
+/** Optional size token: 13inch, 15inch, or phone-style 6-3inch. */
+const SIZE_PREFIX = '(?:\\d+(?:-\\d+)?inch-)';
+
+function isValidColorId(id: string): boolean {
+  return /^[a-z][a-z0-9]*$/.test(id) && !NON_COLOR_TOKENS.has(id);
+}
+
 /** Pull finish/color token from Apple-style Cloudinary filenames. */
 export function extractColorIdFromUrl(url: string): string | null {
   const file = filenameFromUrl(url).toLowerCase();
   if (file.includes('unselect')) return null;
+  if (file.includes('size-select')) return null;
 
-  const selectMatch = file.match(/finish-select-\d{6}-([a-z0-9]+)(?:_|-|\.|$)/);
-  if (selectMatch && !NON_COLOR_TOKENS.has(selectMatch[1])) {
-    return selectMatch[1];
+  // finish-select-YYYYMM[-Ninch|-N-Ninch]-{color}
+  const finishMatch = file.match(
+    new RegExp(`finish-select-\\d{6}-${SIZE_PREFIX}?([a-z0-9]+)(?:_|-|\\.|$)`)
+  );
+  if (finishMatch && isValidColorId(finishMatch[1])) {
+    return finishMatch[1];
   }
 
-  const genericSelect = file.match(/(?:^|-)select-\d{6}-([a-z0-9]+)(?:_|-|\.|$)/);
-  if (genericSelect && !NON_COLOR_TOKENS.has(genericSelect[1])) {
-    return genericSelect[1];
+  // color-select-YYYYMM-{color} (MacBook Neo) or generic select-
+  const colorMatch = file.match(
+    new RegExp(
+      `(?:color-select|finish-select|(?:^|-)select)-\\d{6}-${SIZE_PREFIX}?([a-z0-9]+)(?:_|-|\\.|$)`
+    )
+  );
+  if (colorMatch && isValidColorId(colorMatch[1])) {
+    return colorMatch[1];
   }
 
   return null;
+}
+
+/** e.g. 13inch → 13" ; 6-3inch → 6.3" */
+export function extractSizeIdFromUrl(url: string): string | null {
+  const file = filenameFromUrl(url).toLowerCase();
+  const phone = file.match(/(\d+)-(\d+)inch/);
+  if (phone) return `${phone[1]}.${phone[2]}"`;
+  const laptop = file.match(/(?:^|[^0-9])(\d{2})inch/);
+  if (laptop) return `${laptop[1]}"`;
+  return null;
+}
+
+/** Keep URLs that match the chosen size, plus size-agnostic / unselect shots. */
+export function filterUrlsBySize(
+  urls: string[],
+  selectedSize: string | null | undefined
+): string[] {
+  if (!selectedSize) return urls;
+  const hasSized = urls.some((u) => /\d+(?:-\d+)?inch/i.test(filenameFromUrl(u)));
+  if (!hasSized) return urls;
+
+  const inches = selectedSize.replace(/["']/g, '');
+  const inchToken = inches.includes('.')
+    ? `${inches.replace('.', '-')}inch`
+    : `${inches}inch`;
+
+  const filtered = urls.filter((url) => {
+    const file = filenameFromUrl(url).toLowerCase();
+    if (file.includes('unselect')) return true;
+    if (!/\d+(?:-\d+)?inch/.test(file)) return true;
+    return file.includes(inchToken);
+  });
+
+  // If no assets for this size (e.g. 15" without photos), fall back to heroes.
+  if (!filtered.some((u) => extractColorIdFromUrl(u))) {
+    const heroes = urls.filter((u) => {
+      const f = filenameFromUrl(u).toLowerCase();
+      return f.includes('unselect') || !/\d+(?:-\d+)?inch/.test(f);
+    });
+    return heroes.length ? heroes : urls;
+  }
+  return filtered;
 }
 
 export function buildColorOptions(imageUrls: string[]): ProductColorOption[] {
@@ -112,18 +203,30 @@ export function buildColorOptions(imageUrls: string[]): ProductColorOption[] {
 export function resolveProductGallery(
   imageUrl: string,
   imageUrls: string[] | undefined,
-  selectedColorId: string | null
+  selectedColorId: string | null,
+  selectedSize?: string | null
 ): { colors: ProductColorOption[]; gallery: string[] } {
   const all = Array.from(
     new Set((imageUrls?.length ? imageUrls : [imageUrl]).filter(Boolean))
   );
+  // Swatches from the full set so missing size assets still show finish choices.
   const colors = buildColorOptions(all);
+  const sized = filterUrlsBySize(all, selectedSize);
 
   if (colors.length === 0) {
-    return { colors, gallery: all };
+    return { colors, gallery: sized.length ? sized : all };
   }
 
-  const active =
-    colors.find((c) => c.id === selectedColorId) || colors[0];
-  return { colors, gallery: active.imageUrls.length ? active.imageUrls : all };
+  const active = colors.find((c) => c.id === selectedColorId) || colors[0];
+  const sizedColorUrls = sized.filter((u) => extractColorIdFromUrl(u) === active.id);
+  const fallbackColorUrls = active.imageUrls;
+  const gallery = sizedColorUrls.length
+    ? sizedColorUrls
+    : fallbackColorUrls.length
+      ? fallbackColorUrls
+      : sized.length
+        ? sized
+        : all;
+
+  return { colors, gallery };
 }
