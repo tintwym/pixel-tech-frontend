@@ -41,3 +41,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# macOS Finder copy collisions (e.g. "tsconfig 2.tsbuildinfo")
+* 2.*
+
+# Next.js auto-generated agent stubs (recreated by `next dev`)
+/AGENTS.md
+/CLAUDE.md
