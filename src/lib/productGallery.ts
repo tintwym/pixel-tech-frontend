@@ -55,6 +55,8 @@ const NON_COLOR_TOKENS = new Set([
   'av3',
   'av4',
   'av5',
+  'av6',
+  'av7',
   'product',
   'products',
   'iphone',
@@ -62,6 +64,8 @@ const NON_COLOR_TOKENS = new Set([
   'macbook',
   'neo',
   'air',
+  'pro',
+  'proled',
 ]);
 
 function titleCaseColor(id: string): string {
@@ -138,10 +142,11 @@ export function extractColorIdFromUrl(url: string): string | null {
   return null;
 }
 
-/** e.g. 13inch → 13" ; 6-3inch → 6.3" */
+/** e.g. 13inch → 13" ; 6-3inch → 6.3" (not YYYYMM-14inch dates). */
 export function extractSizeIdFromUrl(url: string): string | null {
   const file = filenameFromUrl(url).toLowerCase();
-  const phone = file.match(/(\d+)-(\d+)inch/);
+  // Phone-style only: single digit before hyphen (6-3inch / 6-9inch).
+  const phone = file.match(/(?:^|[^0-9])(\d)-(\d+)inch/);
   if (phone) return `${phone[1]}.${phone[2]}"`;
   const laptop = file.match(/(?:^|[^0-9])(\d{2})inch/);
   if (laptop) return `${laptop[1]}"`;

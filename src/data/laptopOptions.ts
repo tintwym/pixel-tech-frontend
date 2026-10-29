@@ -31,7 +31,7 @@ export function laptopSizeOptions(
   const n = productName.toLowerCase();
   if (/macbook\s*air/.test(n)) return ['13"', '15"'];
   if (/macbook\s*neo/.test(n)) return fromUrls; // Neo assets are single-size
-  if (/macbook\s*pro/.test(n)) {
+  if (/macbook\s*pro|proled/.test(n)) {
     if (/\b14/.test(n)) return ['14"', '16"'];
     if (/\b16/.test(n)) return ['14"', '16"'];
     return fromUrls.length ? fromUrls : ['14"', '16"'];

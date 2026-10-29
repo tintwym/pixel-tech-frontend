@@ -26,7 +26,8 @@ export function inferCatalogPriority(name: string): number {
   }
 
   if (n.includes('macbook')) {
-    if (/\bneo\b/.test(n)) score = Math.max(score, 6250);
+    if (/\bproled\b/.test(n)) score = Math.max(score, 6500);
+    else if (/\bneo\b/.test(n)) score = Math.max(score, 6250);
     else if (/\bair\b/.test(n)) score = Math.max(score, 6200);
     else {
       const chip = n.match(/\bm(\d+)/);
