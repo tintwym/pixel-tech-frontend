@@ -41,6 +41,7 @@ export type FeaturesRestriction =
   | 'M3'
   | 'M4'
   | 'M4 Pro'
+  | 'PROLED'
   | 'XDR'
   | 'Thunderbolt'
   | 'Spatial Audio'
