@@ -158,6 +158,7 @@ export default function Storefront() {
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   /** Mobile bottom tab — mirrors iOS: Home · Products · Cart · Profile */
   const [mobileTab, setMobileTab] = useState<'home' | 'products' | 'cart' | 'profile'>('home');
+  const [isMobileProfileSheetOpen, setIsMobileProfileSheetOpen] = useState(false);
 
   // Core Data States
   const [products, setProducts] = useState<GroceryItem[]>(INITIAL_GROCERIES);
@@ -309,6 +310,7 @@ export default function Storefront() {
     setMobileTab('home');
     setIsCartOpen(false);
     setIsProfileOpen(false);
+    setIsMobileProfileSheetOpen(false);
     setIsNotificationOpen(false);
     setActiveTrackingOrder(null);
     setIsVoiceModalOpen(false);
@@ -320,6 +322,7 @@ export default function Storefront() {
     setMobileTab('products');
     setIsCartOpen(false);
     setIsProfileOpen(false);
+    setIsMobileProfileSheetOpen(false);
     setIsNotificationOpen(false);
     setActiveTrackingOrder(null);
     setIsVoiceModalOpen(false);
@@ -332,6 +335,7 @@ export default function Storefront() {
   const goMobileCart = () => {
     setMobileTab('cart');
     setIsProfileOpen(false);
+    setIsMobileProfileSheetOpen(false);
     setIsNotificationOpen(false);
     setIsCartOpen(true);
   };
@@ -340,12 +344,22 @@ export default function Storefront() {
     setMobileTab('profile');
     setIsCartOpen(false);
     setIsNotificationOpen(false);
-    if (isSignedIn) {
-      setIsProfileOpen(true);
-    } else {
-      openAccount();
-    }
+    setIsMobileProfileSheetOpen(true);
   };
+
+  const closeMobileProfileSheet = () => {
+    setIsMobileProfileSheetOpen(false);
+    setMobileTab((tab) => (tab === 'profile' ? 'home' : tab));
+  };
+
+  const themeGlyph =
+    themePref === 'system' ? (
+      <Monitor className="w-5 h-5 text-[#0284c7]" />
+    ) : isDarkMode ? (
+      <Sun className="w-5 h-5 text-amber-400" />
+    ) : (
+      <Moon className="w-5 h-5 text-[#64748b]" />
+    );
 
   const handleSignOut = () => {
     storeToken(null);
@@ -702,7 +716,7 @@ export default function Storefront() {
 
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/70 dark:bg-[#121a24] hover:bg-white dark:hover:bg-[#1a242f] text-[#64748b] dark:text-[#8a9eb0] cursor-pointer transition-colors"
+              className="hidden sm:inline-flex p-2 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/70 dark:bg-[#121a24] hover:bg-white dark:hover:bg-[#1a242f] text-[#64748b] dark:text-[#8a9eb0] cursor-pointer transition-colors"
               aria-label={themeLabel}
               title={themeLabel}
             >
@@ -911,6 +925,106 @@ export default function Storefront() {
         }}
       />
 
+      {/* Mobile Profile sheet — theme lives under Profile (not header) */}
+      <AnimatePresence>
+        {isMobileProfileSheetOpen && (
+          <motion.div
+            className="sm:hidden fixed inset-0 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <button
+              type="button"
+              className="absolute inset-0 bg-[#0B1220]/45 backdrop-blur-[2px] cursor-pointer"
+              aria-label="Close profile"
+              onClick={closeMobileProfileSheet}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="mobile-profile-title"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="absolute inset-x-0 bottom-0 rounded-t-3xl border border-[#0284c7]/15 dark:border-white/10 bg-[#eef4f8] dark:bg-[#0B1220] shadow-market px-4 pt-3 pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.75rem))]"
+            >
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#0284c7]/25 dark:bg-white/20" aria-hidden />
+              <h3
+                id="mobile-profile-title"
+                className="font-display text-lg font-semibold text-[#0f172a] dark:text-[#e7eef5] mb-4"
+              >
+                Profile
+              </h3>
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={themeLabel}
+                className="w-full flex items-center gap-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/90 dark:bg-[#121a24] px-3.5 py-3 text-left cursor-pointer hover:border-[#0284c7]/35 transition-colors"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white dark:bg-[#0B1220] border border-[#0284c7]/12 dark:border-white/10 shadow-sm">
+                  {themeGlyph}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-[#0f172a] dark:text-[#e7eef5]">
+                    Appearance
+                  </span>
+                  <span className="block text-xs text-[#64748b] dark:text-[#8a9eb0]">
+                    {themePref === 'system'
+                      ? `System (${isDarkMode ? 'Dark' : 'Light'})`
+                      : themePref === 'dark'
+                        ? 'Dark'
+                        : 'Light'}
+                    {' · '}tap to cycle
+                  </span>
+                </span>
+              </button>
+
+              <div className="mt-3 space-y-2">
+                {isSignedIn ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileProfileSheetOpen(false);
+                        setIsProfileOpen(true);
+                      }}
+                      className="w-full min-h-11 rounded-2xl bg-[#0284c7] hover:bg-[#0ea5e9] text-white text-sm font-semibold cursor-pointer transition-colors"
+                    >
+                      Account settings
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSignOut();
+                        closeMobileProfileSheet();
+                      }}
+                      className="w-full min-h-11 rounded-2xl border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 text-sm font-semibold cursor-pointer"
+                    >
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileProfileSheetOpen(false);
+                      setIsAuthOpen(true);
+                    }}
+                    className="w-full min-h-11 rounded-2xl bg-[#0284c7] hover:bg-[#0ea5e9] text-white text-sm font-semibold cursor-pointer transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Sign in
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* User Profile Preferences Modal */}
       <UserProfileModal
         profile={profile}
@@ -930,6 +1044,10 @@ export default function Storefront() {
         onClearOrders={() => setOrders([])}
         onAddToast={handleAddToast}
         onSignOut={handleSignOut}
+        themePref={themePref}
+        isDarkMode={isDarkMode}
+        themeLabel={themeLabel}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Post-order feedback modal */}

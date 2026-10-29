@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { ShoppingCart, MapPin, TrendingUp, WifiOff, Star, Tag, LayoutGrid } from 'lucide-react';
+import { ShoppingCart, MapPin, TrendingUp, WifiOff, Star, Tag, LayoutGrid, SlidersHorizontal, X } from 'lucide-react';
 import { GroceryItem } from '@/types';
 import { ZONE_OPTIONS, ZONE_DELIVERY_STATUS } from '@/data/products';
 import { PRODUCT_BRANDS, PRODUCT_CATEGORIES } from '@/data/catalogTaxonomy';
@@ -97,6 +97,21 @@ export default function GroceryCatalog({
   const [recognition, setRecognition] = useState<any>(null);
   const [expandedSparklines, setExpandedSparklines] = useState<{ [itemId: string]: boolean }>({});
   const [isOffline, setIsOffline] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFiltersOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [filtersOpen]);
 
   useEffect(() => {
     const onNavCategory = (event: Event) => {
@@ -295,6 +310,43 @@ export default function GroceryCatalog({
 
   const zoneDeliveryInfo = ZONE_DELIVERY_STATUS[selectedZone] || ZONE_DELIVERY_STATUS['All Zones'];
 
+  const sheetFiltersActive = selectedZone !== 'All Zones' || onlyBestValue;
+  const filtersActive =
+    selectedBrand !== 'All Brands' ||
+    selectedCategory !== 'All Categories' ||
+    sheetFiltersActive ||
+    aiFilterIds !== null ||
+    searchQuery.trim().length > 0;
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedBrand('All Brands');
+    setSelectedCategory('All Categories');
+    setSelectedZone('All Zones');
+    setOnlyBestValue(false);
+    setAiFilterIds(null);
+  };
+
+  const selectTriggerClass =
+    'w-full min-h-11 px-3 py-2.5 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-sm text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors';
+
+  const brandOptions = [
+    { value: 'All Brands', label: 'All brands' },
+    ...availableBrands.map((brand) => ({ value: brand, label: brand })),
+  ];
+  const categoryOptions = [
+    { value: 'All Categories', label: 'All categories' },
+    ...availableCategories.map((category) => ({
+      value: category,
+      label: category,
+    })),
+  ];
+  const zoneOptions = ZONE_OPTIONS.map((zone) => ({
+    value: zone,
+    label: zone,
+    description: ZONE_DELIVERY_STATUS[zone]?.title,
+  }));
+
   return (
     <div id="catalog-section" className="space-y-8 scroll-mt-20">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
@@ -306,7 +358,7 @@ export default function GroceryCatalog({
             Newest models first — mobiles, laptops, and accessories for Yangon delivery.
           </p>
         </div>
-        <p className="text-xs font-medium text-[#64748b] dark:text-[#8a9eb0]">
+        <p className="hidden sm:block text-xs font-medium text-[#64748b] dark:text-[#8a9eb0]">
           {filteredProducts.length} item{filteredProducts.length === 1 ? '' : 's'}
           {zoneDeliveryInfo.status === 'delayed' ? ` · +${zoneDeliveryInfo.delayMinutes}m delay in ${selectedZone}` : ''}
         </p>
@@ -328,7 +380,7 @@ export default function GroceryCatalog({
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col md:flex-row gap-3">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start">
         <CatalogSearchBar
           products={products}
           value={searchQuery}
@@ -341,16 +393,54 @@ export default function GroceryCatalog({
           onToggleSpeech={handleToggleSpeech}
         />
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Mobile: Brand / Category / Filters */}
+        <div className="grid grid-cols-3 gap-2 md:hidden">
+          <Select
+            id="brand-select-mobile"
+            aria-label="Brand"
+            value={selectedBrand}
+            onChange={setSelectedBrand}
+            options={brandOptions}
+            icon={<Tag className="w-3.5 h-3.5 text-[#0ea5e9] shrink-0" />}
+            className={selectTriggerClass}
+          />
+          <Select
+            id="category-select-mobile"
+            aria-label="Category"
+            value={selectedCategory}
+            onChange={setSelectedCategory}
+            options={categoryOptions}
+            icon={<LayoutGrid className="w-3.5 h-3.5 text-[#0ea5e9] shrink-0" />}
+            className={selectTriggerClass}
+          />
+          <button
+            type="button"
+            id="filters-open-mobile"
+            onClick={() => setFiltersOpen(true)}
+            className={`relative min-h-11 px-3 py-2.5 rounded-2xl border text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+              sheetFiltersActive
+                ? 'border-[#0284c7]/40 bg-[#e0f2fe]/70 text-[#0284c7] dark:border-sky-400/40 dark:bg-sky-500/15 dark:text-sky-300'
+                : 'border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35'
+            }`}
+            aria-haspopup="dialog"
+            aria-expanded={filtersOpen}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
+            Filters
+            {sheetFiltersActive && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#0284c7] dark:bg-sky-400" aria-hidden />
+            )}
+          </button>
+        </div>
+
+        {/* Desktop: Brand / Category / Zone / Best value */}
+        <div className="hidden md:flex flex-wrap items-center gap-2">
           <Select
             id="brand-select"
             aria-label="Brand"
             value={selectedBrand}
             onChange={setSelectedBrand}
-            options={[
-              { value: 'All Brands', label: 'All brands' },
-              ...availableBrands.map((brand) => ({ value: brand, label: brand })),
-            ]}
+            options={brandOptions}
             icon={<Tag className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
             className="min-w-40 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
           />
@@ -360,13 +450,7 @@ export default function GroceryCatalog({
             aria-label="Category"
             value={selectedCategory}
             onChange={setSelectedCategory}
-            options={[
-              { value: 'All Categories', label: 'All categories' },
-              ...availableCategories.map((category) => ({
-                value: category,
-                label: category,
-              })),
-            ]}
+            options={categoryOptions}
             icon={<LayoutGrid className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
             className="min-w-44 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
           />
@@ -376,11 +460,7 @@ export default function GroceryCatalog({
             aria-label="Delivery zone"
             value={selectedZone}
             onChange={setSelectedZone}
-            options={ZONE_OPTIONS.map((zone) => ({
-              value: zone,
-              label: zone,
-              description: ZONE_DELIVERY_STATUS[zone]?.title,
-            }))}
+            options={zoneOptions}
             icon={<MapPin className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
             className="min-w-48 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
           />
@@ -400,12 +480,155 @@ export default function GroceryCatalog({
         </div>
       </div>
 
+      {/* Mobile clear + count */}
+      <div className="flex items-center justify-between gap-3 min-h-5 md:hidden -mt-4">
+        <p className="text-xs font-medium text-[#64748b] dark:text-[#8a9eb0]">
+          {filteredProducts.length} item{filteredProducts.length === 1 ? '' : 's'}
+          {zoneDeliveryInfo.status === 'delayed'
+            ? ` · +${zoneDeliveryInfo.delayMinutes}m in ${selectedZone}`
+            : ''}
+        </p>
+        {filtersActive && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="text-xs font-semibold text-[#0284c7] dark:text-sky-400 cursor-pointer"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
+      {/* Mobile Filters sheet — Zone + Best value */}
+      <AnimatePresence>
+        {filtersOpen && (
+          <motion.div
+            className="md:hidden fixed inset-0 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <button
+              type="button"
+              className="absolute inset-0 bg-[#0B1220]/45 backdrop-blur-[2px] cursor-pointer"
+              aria-label="Close filters"
+              onClick={() => setFiltersOpen(false)}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="mobile-filters-title"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="absolute inset-x-0 bottom-0 rounded-t-3xl border border-[#0284c7]/15 dark:border-white/10 bg-[#eef4f8] dark:bg-[#0B1220] shadow-market px-4 pt-3 pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.75rem))]"
+            >
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#0284c7]/25 dark:bg-white/20" aria-hidden />
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h3
+                  id="mobile-filters-title"
+                  className="font-display text-lg font-semibold text-[#0f172a] dark:text-[#e7eef5]"
+                >
+                  Filters
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(false)}
+                  className="p-2 rounded-xl text-[#64748b] hover:bg-white/70 dark:hover:bg-white/10 cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="zone-select-mobile" className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">
+                    Delivery zone
+                  </label>
+                  <Select
+                    id="zone-select-mobile"
+                    aria-label="Delivery zone"
+                    value={selectedZone}
+                    onChange={setSelectedZone}
+                    options={zoneOptions}
+                    icon={<MapPin className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
+                    className={selectTriggerClass}
+                  />
+                  <p className="text-xs text-[#64748b] dark:text-[#8a9eb0]">
+                    {zoneDeliveryInfo.title}
+                    {zoneDeliveryInfo.status === 'delayed'
+                      ? ` · +${zoneDeliveryInfo.delayMinutes}m delay`
+                      : ''}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] px-3.5 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[#0f172a] dark:text-[#e7eef5]">Best value</p>
+                    <p className="text-xs text-[#64748b] dark:text-[#8a9eb0]">
+                      Lowest unit price in each category
+                    </p>
+                  </div>
+                  <button
+                    id="best-value-toggle-mobile"
+                    type="button"
+                    role="switch"
+                    aria-checked={onlyBestValue}
+                    onClick={() => setOnlyBestValue(!onlyBestValue)}
+                    className={`relative h-7 w-12 rounded-full transition-colors cursor-pointer ${
+                      onlyBestValue ? 'bg-amber-400' : 'bg-[#cbd5e1] dark:bg-[#334155]'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                        onlyBestValue ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedZone('All Zones');
+                    setOnlyBestValue(false);
+                  }}
+                  className="flex-1 min-h-11 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 text-sm font-semibold text-[#0f172a] dark:text-[#e7eef5] cursor-pointer"
+                >
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(false)}
+                  className="flex-1 min-h-11 rounded-2xl bg-[#0284c7] hover:bg-[#0ea5e9] text-white text-sm font-semibold cursor-pointer transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {filteredProducts.length === 0 ? (
         <div className="py-16 text-center">
           <p className="font-display text-lg font-semibold text-[#0f172a] dark:text-[#e7eef5]">
             Nothing matches
           </p>
           <p className="mt-1 text-sm text-[#64748b]">Try another search or clear filters.</p>
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-4 text-sm font-semibold text-[#0284c7] dark:text-sky-400 cursor-pointer"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">

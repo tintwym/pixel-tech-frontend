@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   X, User, MapPin, CreditCard, Shield, Gift, Link2, Download, Trash2, CheckCircle2,
   Lock, AlertCircle, BarChart3, Package, Clock, ShoppingBag, XCircle, Truck, ChevronRight,
-  LogOut
+  LogOut, Monitor, Sun, Moon
 } from 'lucide-react';
 import { UserProfile, DeliveryAddress, PaymentMethod, Order } from '@/types';
 import { DELIVERY_ZONES, INITIAL_GROCERIES } from '@/data/products';
@@ -65,6 +65,10 @@ interface UserProfileModalProps {
   onAddToast: (title: string, msg: string, type: 'success' | 'warning' | 'info') => void;
   orders?: Order[];
   onSignOut?: () => void;
+  themePref?: 'system' | 'light' | 'dark';
+  isDarkMode?: boolean;
+  themeLabel?: string;
+  onToggleTheme?: () => void;
 }
 
 export default function UserProfileModal({
@@ -76,6 +80,10 @@ export default function UserProfileModal({
   onAddToast,
   orders = [],
   onSignOut,
+  themePref = 'system',
+  isDarkMode = false,
+  themeLabel = 'Theme',
+  onToggleTheme,
 }: UserProfileModalProps) {
   const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses' | 'payments' | 'loyalty' | 'gdpr'>('profile');
   const [orderStatusFilter, setOrderStatusFilter] = useState<'All' | 'Pending' | 'Delivered' | 'Cancelled'>('All');
@@ -503,6 +511,38 @@ export default function UserProfileModal({
             {/* PROFILE TAB */}
             {activeTab === 'profile' && (
               <div className="space-y-6">
+                {onToggleTheme && (
+                  <button
+                    type="button"
+                    onClick={onToggleTheme}
+                    aria-label={themeLabel}
+                    className="w-full flex items-center gap-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white dark:bg-[#0B1220] px-3.5 py-3 text-left cursor-pointer hover:border-[#0284c7]/35 transition-colors"
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef4f8] dark:bg-[#121a24] border border-[#0284c7]/12 dark:border-white/10 shadow-sm">
+                      {themePref === 'system' ? (
+                        <Monitor className="w-5 h-5 text-[#0284c7]" />
+                      ) : isDarkMode ? (
+                        <Sun className="w-5 h-5 text-amber-400" />
+                      ) : (
+                        <Moon className="w-5 h-5 text-[#64748b]" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-slate-800 dark:text-white">
+                        Appearance
+                      </span>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">
+                        {themePref === 'system'
+                          ? `System (${isDarkMode ? 'Dark' : 'Light'})`
+                          : themePref === 'dark'
+                            ? 'Dark'
+                            : 'Light'}
+                        {' · '}tap to cycle System / Light / Dark
+                      </span>
+                    </span>
+                  </button>
+                )}
+
                 <div>
                   <h4 className="font-display font-bold text-lg text-slate-800 dark:text-white">Basic Profile Settings</h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Keep your personal contact details correct for accurate order invoicing.</p>
