@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShoppingCart, MapPin, Mic, TrendingUp, WifiOff, Star, Tag, LayoutGrid } from 'lucide-react';
+import { ShoppingCart, MapPin, TrendingUp, WifiOff, Star, Tag, LayoutGrid } from 'lucide-react';
 import { GroceryItem } from '@/types';
 import { ZONE_OPTIONS, ZONE_DELIVERY_STATUS } from '@/data/products';
 import { PRODUCT_BRANDS, PRODUCT_CATEGORIES } from '@/data/catalogTaxonomy';
@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import PriceSparkline from '@/components/PriceSparkline';
 import ProductImage from '@/components/ProductImage';
 import ProductDetailsModal from '@/components/ProductDetailsModal';
+import CatalogSearchBar from '@/components/CatalogSearchBar';
 import Select from '@/components/Select';
 
 interface GroceryCatalogProps {
@@ -86,6 +87,7 @@ export default function GroceryCatalog({
   onAddToast
 }: GroceryCatalogProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [aiFilterIds, setAiFilterIds] = useState<string[] | null>(null);
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [detailsItem, setDetailsItem] = useState<GroceryItem | null>(null);
@@ -230,11 +232,18 @@ export default function GroceryCatalog({
   const filteredProducts = useMemo(() => {
     return products.filter(item => {
       const q = searchQuery.toLowerCase();
+      const matchesAi =
+        aiFilterIds === null || aiFilterIds.includes(item.id);
+
+      // When AI pinned matches, skip text filter so the grid mirrors AI results.
       const matchesSearch =
-        item.name.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q) ||
-        item.brand.toLowerCase().includes(q);
+        aiFilterIds !== null
+          ? true
+          : !q ||
+            item.name.toLowerCase().includes(q) ||
+            item.description.toLowerCase().includes(q) ||
+            item.category.toLowerCase().includes(q) ||
+            item.brand.toLowerCase().includes(q);
 
       const matchesZone = selectedZone === 'All Zones' ||
                           item.availabilityZone === 'All Zones' ||
@@ -249,6 +258,7 @@ export default function GroceryCatalog({
       const matchesBestValue = !onlyBestValue || bestValueMap[item.id]?.isBestValue;
 
       return (
+        matchesAi &&
         matchesSearch &&
         matchesZone &&
         matchesBrand &&
@@ -259,6 +269,7 @@ export default function GroceryCatalog({
   }, [
     products,
     searchQuery,
+    aiFilterIds,
     selectedZone,
     selectedBrand,
     selectedCategory,
@@ -318,29 +329,17 @@ export default function GroceryCatalog({
       </AnimatePresence>
 
       <div className="flex flex-col md:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#64748b]/70" />
-          <input
-            id="grocery-search"
-            type="text"
-            placeholder="Search phones, laptops, audio…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-12 py-3 border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] rounded-2xl text-sm placeholder:text-[#64748b]/60 focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/40 transition-shadow"
-          />
-          <button
-            type="button"
-            onClick={handleToggleSpeech}
-            className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-xl transition-colors cursor-pointer ${
-              isListening
-                ? 'bg-red-500/15 text-red-600'
-                : 'text-[#64748b] hover:text-[#0284c7] hover:bg-[#e0f2fe]/60'
-            }`}
-            title={isListening ? 'Stop' : 'Voice search'}
-          >
-            <Mic className="w-4 h-4" />
-          </button>
-        </div>
+        <CatalogSearchBar
+          products={products}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          onAiFilter={setAiFilterIds}
+          onAddToCart={(item, qty, isSub) => onAddToCart(item, qty, isSub)}
+          onOpenProduct={setDetailsItem}
+          onAddToast={onAddToast}
+          isListening={isListening}
+          onToggleSpeech={handleToggleSpeech}
+        />
 
         <div className="flex flex-wrap items-center gap-2">
           <Select
