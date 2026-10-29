@@ -98,6 +98,17 @@ export default function GroceryCatalog({
   const [isOffline, setIsOffline] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  useEffect(() => {
+    const onNavCategory = (event: Event) => {
+      const category = (event as CustomEvent<string>).detail;
+      if (!category) return;
+      setSelectedCategory(category);
+      setFiltersOpen(true);
+    };
+    window.addEventListener('pixel-filter-category', onNavCategory);
+    return () => window.removeEventListener('pixel-filter-category', onNavCategory);
+  }, []);
+
   // Best value = lowest unit price within the same category (not global unit-type)
   const bestValueMap = useMemo(() => {
     const minPriceCategory: { [cat: string]: number } = {};

@@ -6,12 +6,8 @@ export function isSmartphoneCategory(category: string | undefined): boolean {
   return (category || '').toLowerCase() === 'smartphones';
 }
 
-export function defaultMobileStorage(productName: string): MobileStorage {
-  const match = productName.match(/(\d+)\s*GB/i);
-  if (match) {
-    const gb = `${match[1]}GB` as MobileStorage;
-    if ((MOBILE_STORAGE_OPTIONS as readonly string[]).includes(gb)) return gb;
-  }
+/** Always open on 256GB when that tier is offered (ignore name suffixes like — 128GB). */
+export function defaultMobileStorage(_productName?: string): MobileStorage {
   return '256GB';
 }
 

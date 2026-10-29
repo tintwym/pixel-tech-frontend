@@ -50,14 +50,9 @@ export function defaultLaptopSize(productName: string, sizes: string[]): string 
   return sizes[0];
 }
 
-export function defaultLaptopStorage(productName: string): LaptopStorage {
-  if (/\b1\s*TB\b/i.test(productName)) return '1TB';
-  const m = productName.match(/(\d+)\s*GB/i);
-  if (m) {
-    const gb = `${m[1]}GB` as LaptopStorage;
-    if ((LAPTOP_STORAGE_OPTIONS as readonly string[]).includes(gb)) return gb;
-  }
-  return '512GB';
+/** Always open on 256GB when that tier is offered. */
+export function defaultLaptopStorage(_productName?: string): LaptopStorage {
+  return '256GB';
 }
 
 export function defaultLaptopMemory(productName: string): LaptopMemory {
@@ -75,7 +70,7 @@ export function defaultLaptopMemory(productName: string): LaptopMemory {
   return '16GB';
 }
 
-/** Catalog base price assumed for mid config: 13"/14" · 16GB · 512GB. */
+/** Catalog base price assumed for: 13"/14" · 16GB · 256GB. */
 export function laptopConfigPrice(
   basePrice: number,
   size: string | null,
@@ -96,11 +91,11 @@ export function laptopConfigPrice(
       break;
   }
   switch (storage) {
-    case '256GB':
-      price -= 400_000;
+    case '512GB':
+      price += 400_000;
       break;
     case '1TB':
-      price += 800_000;
+      price += 1_200_000;
       break;
     default:
       break;

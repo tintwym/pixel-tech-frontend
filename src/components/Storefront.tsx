@@ -26,7 +26,6 @@ import FeedbackModal from '@/components/FeedbackModal';
 import VoiceSearchModal from '@/components/VoiceSearchModal';
 import OrderCelebrationModal from '@/components/OrderCelebrationModal';
 import OrderDetailsModal from '@/components/OrderDetailsModal';
-import NavbarSearch from '@/components/NavbarSearch';
 import {
   displayNameFromUser,
   fetchCurrentUser,
@@ -40,6 +39,25 @@ import {
   persistOrders,
   persistStockLevels,
 } from '@/lib/commerceSync';
+
+/** Compact department links — catalog still owns search/filters. */
+const NAV_CATEGORIES: { label: string; category: string }[] = [
+  { label: 'Phones', category: 'Smartphones' },
+  { label: 'Laptops', category: 'Laptops' },
+  { label: 'Tablets', category: 'Tablets' },
+  { label: 'Audio', category: 'Audio / Headphones' },
+  { label: 'Watches', category: 'Smartwatches / Wearables' },
+];
+
+function jumpToCatalogCategory(category: string) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent('pixel-filter-category', { detail: category })
+  );
+  document
+    .getElementById('catalog-section')
+    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 export default function Storefront() {
 
@@ -610,12 +628,21 @@ export default function Storefront() {
             </div>
           </Link>
 
-          <NavbarSearch
-            products={products}
-            onAddToCart={(item, qty) => handleAddToCart(item, qty, false)}
-            onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
-            onAddToast={handleAddToast}
-          />
+          <nav
+            className="hidden md:flex flex-1 items-center justify-center gap-1 min-w-0 px-2"
+            aria-label="Shop by category"
+          >
+            {NAV_CATEGORIES.map(({ label, category }) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => jumpToCatalogCategory(category)}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold text-[#475569] dark:text-[#94a3b8] hover:text-[#0284c7] dark:hover:text-sky-300 hover:bg-white/70 dark:hover:bg-white/5 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button

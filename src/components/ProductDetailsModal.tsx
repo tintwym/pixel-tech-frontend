@@ -5,7 +5,7 @@ import { X, ShoppingCart, Star, MapPin, ChevronLeft, ChevronRight } from 'lucide
 import { AnimatePresence, motion } from 'motion/react';
 import { GroceryItem } from '@/types';
 import ProductImage from '@/components/ProductImage';
-import { resolveProductGallery } from '@/lib/productGallery';
+import { defaultColorId, resolveProductGallery } from '@/lib/productGallery';
 import {
   MOBILE_STORAGE_OPTIONS,
   defaultMobileStorage,
@@ -83,7 +83,7 @@ export default function ProductDetailsModal({
   useEffect(() => {
     if (!isOpen || !item) return;
     const next = resolveProductGallery(item.imageUrl, item.imageUrls, null);
-    setSelectedColorId(next.colors[0]?.id ?? null);
+    setSelectedColorId(defaultColorId(next.colors));
     if (isLaptopCategory(item.category)) {
       const sizes = laptopSizeOptions(item.name, item.imageUrls || []);
       setSelectedSize(defaultLaptopSize(item.name, sizes));

@@ -180,6 +180,16 @@ export function filterUrlsBySize(
   return filtered;
 }
 
+/** Prefer Black / dark finishes, then a neutral Silver when available. */
+const DEFAULT_COLOR_PREFERENCE = [
+  'black',
+  'spaceblack',
+  'blacktitanium',
+  'midnight',
+  'nightsky',
+  'silver',
+] as const;
+
 export function buildColorOptions(imageUrls: string[]): ProductColorOption[] {
   const urls = Array.from(new Set(imageUrls.filter(Boolean)));
   const byColor = new Map<string, string[]>();
@@ -192,12 +202,36 @@ export function buildColorOptions(imageUrls: string[]): ProductColorOption[] {
     byColor.set(colorId, list);
   }
 
-  return [...byColor.entries()].map(([id, colorUrls]) => ({
+  const options = [...byColor.entries()].map(([id, colorUrls]) => ({
     id,
     label: titleCaseColor(id),
     swatch: COLOR_SWATCHES[id] || '#94a3b8',
     imageUrls: colorUrls,
   }));
+
+  // Stable order: preferred dark finishes first, then the rest alphabetically.
+  return options.sort((a, b) => {
+    const ai = DEFAULT_COLOR_PREFERENCE.indexOf(
+      a.id as (typeof DEFAULT_COLOR_PREFERENCE)[number]
+    );
+    const bi = DEFAULT_COLOR_PREFERENCE.indexOf(
+      b.id as (typeof DEFAULT_COLOR_PREFERENCE)[number]
+    );
+    const aRank = ai === -1 ? 100 : ai;
+    const bRank = bi === -1 ? 100 : bi;
+    if (aRank !== bRank) return aRank - bRank;
+    return a.label.localeCompare(b.label);
+  });
+}
+
+export function defaultColorId(
+  colors: Pick<ProductColorOption, 'id'>[]
+): string | null {
+  if (!colors.length) return null;
+  for (const id of DEFAULT_COLOR_PREFERENCE) {
+    if (colors.some((c) => c.id === id)) return id;
+  }
+  return colors[0].id;
 }
 
 export function resolveProductGallery(
@@ -217,7 +251,8 @@ export function resolveProductGallery(
     return { colors, gallery: sized.length ? sized : all };
   }
 
-  const active = colors.find((c) => c.id === selectedColorId) || colors[0];
+  const preferredId = selectedColorId || defaultColorId(colors);
+  const active = colors.find((c) => c.id === preferredId) || colors[0];
   const sizedColorUrls = sized.filter((u) => extractColorIdFromUrl(u) === active.id);
   const fallbackColorUrls = active.imageUrls;
   const gallery = sizedColorUrls.length
