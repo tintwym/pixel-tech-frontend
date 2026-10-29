@@ -75,14 +75,17 @@ function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
     api.images
       ?.map((img) => img.path)
       .filter((path): path is string => Boolean(path) && !isPlaceholderImage(path)) ?? [];
-  const apiImage = apiGallery[0];
-  // Prefer real photos: skip grey dummyimage/placehold seeds from the API.
+  // Prefer curated local primary/gallery order when present; API fills gaps.
   const imageUrl =
-    apiImage ||
     local?.imageUrl ||
+    apiGallery[0] ||
     'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80';
   const imageUrls =
-    apiGallery.length > 0 ? apiGallery : local?.imageUrls?.length ? local.imageUrls : [imageUrl];
+    local?.imageUrls?.length
+      ? local.imageUrls
+      : apiGallery.length > 0
+        ? apiGallery
+        : [imageUrl];
 
   return {
     // Keep stable local ids when names match so demo features (Buy Again, restock sync) work.
