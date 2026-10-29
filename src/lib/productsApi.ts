@@ -1,5 +1,10 @@
 import { GroceryItem, FeaturesRestriction } from '@/types';
 import { INITIAL_GROCERIES } from '@/data/products';
+import {
+  PRODUCT_CATEGORIES,
+  inferBrandFromName,
+  inferCategoryFromName,
+} from '@/data/catalogTaxonomy';
 
 const API_BASE =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) ||
@@ -15,6 +20,8 @@ type ApiProduct = {
   id: string;
   name?: string;
   description?: string;
+  brand?: string;
+  category?: string;
   price?: number | string;
   stock?: number;
   images?: ApiProductImage[];
@@ -43,28 +50,30 @@ function isPlaceholderImage(url?: string | null): boolean {
   );
 }
 
-function inferCategory(name: string, local?: GroceryItem): string {
+function resolveBrand(apiBrand: string | undefined, name: string, local?: GroceryItem): string {
+  if (apiBrand?.trim()) return apiBrand.trim();
+  if (local?.brand) return local.brand;
+  return inferBrandFromName(name);
+}
+
+function resolveCategory(
+  apiCategory: string | undefined,
+  name: string,
+  local?: GroceryItem
+): string {
+  if (apiCategory?.trim()) return apiCategory.trim();
   if (local?.category) return local.category;
-  const n = name.toLowerCase();
-  if (
-    n.includes('iphone') ||
-    n.includes('galaxy s') ||
-    n.includes('pixel') ||
-    n.includes('phone')
-  ) {
-    return 'Mobile';
-  }
-  if (n.includes('macbook') || n.includes('laptop') || n.includes('rog') || n.includes('book')) {
-    return 'Laptop';
-  }
-  if (n.includes('airpods') || n.includes('wh-1000') || n.includes('headphone') || n.includes('buds')) {
-    return 'Audio';
-  }
-  if (n.includes('watch')) return 'Wearables';
-  if (n.includes('ipad') || n.includes('tab ') || n.includes('tablet') || n.includes('monitor')) {
-    return 'Electronics';
-  }
-  return 'Accessories';
+  return inferCategoryFromName(name);
+}
+
+/** Drop leftover grocery rows still present in the shared Neon catalog. */
+function isElectronicsProduct(item: GroceryItem, hasLocalMatch: boolean): boolean {
+  if (hasLocalMatch) return true;
+  if ((PRODUCT_CATEGORIES as readonly string[]).includes(item.category)) return true;
+  const n = item.name.toLowerCase();
+  return /iphone|ipad|macbook|galaxy|airpods|sony|asus|rog|laptop|phone|tablet|headphone|earbud|watch|desktop|pc/.test(
+    n
+  );
 }
 
 function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
@@ -93,7 +102,8 @@ function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
     apiId: String(api.id),
     name,
     description: api.description?.trim() || local?.description || '',
-    category: inferCategory(name, local),
+    brand: resolveBrand(api.brand, name, local),
+    category: resolveCategory(api.category, name, local),
     price: Number.isFinite(priceNum) ? priceNum : local?.price ?? 0,
     currency: 'MMK',
     imageUrl,
@@ -143,8 +153,11 @@ export async function fetchCatalogProducts(signal?: AbortSignal): Promise<Grocer
     INITIAL_GROCERIES.map((item) => [normalizeName(item.name), item] as const)
   );
 
-  return (data as ApiProduct[]).map((api) => {
-    const local = api.name ? localByName.get(normalizeName(api.name)) : undefined;
-    return mapApiProduct(api, local);
-  });
+  return (data as ApiProduct[])
+    .map((api) => {
+      const local = api.name ? localByName.get(normalizeName(api.name)) : undefined;
+      return { item: mapApiProduct(api, local), hasLocal: Boolean(local) };
+    })
+    .filter(({ item, hasLocal }) => isElectronicsProduct(item, hasLocal))
+    .map(({ item }) => item);
 }

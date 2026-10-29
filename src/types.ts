@@ -55,6 +55,7 @@ export interface GroceryItem {
   apiId?: string;
   name: string;
   description: string;
+  brand: string;
   category: string;
   price: number; // in MMK
   currency: string; // "MMK" (and USD support)

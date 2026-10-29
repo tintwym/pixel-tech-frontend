@@ -4,9 +4,11 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Search, ShoppingCart, MapPin, Mic, TrendingUp, WifiOff, Star } from 'lucide-react';
 import { GroceryItem, FeaturesRestriction } from '@/types';
 import { DIETARY_OPTIONS, ZONE_OPTIONS, ZONE_DELIVERY_STATUS } from '@/data/products';
+import { PRODUCT_BRANDS, PRODUCT_CATEGORIES } from '@/data/catalogTaxonomy';
 import { motion, AnimatePresence } from 'motion/react';
 import PriceSparkline from '@/components/PriceSparkline';
 import ProductImage from '@/components/ProductImage';
+import ProductDetailsModal from '@/components/ProductDetailsModal';
 import Select from '@/components/Select';
 
 interface GroceryCatalogProps {
@@ -78,6 +80,9 @@ export default function GroceryCatalog({
 }: GroceryCatalogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFeatures, setSelectedFeatures] = useState<FeaturesRestriction[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState('All Brands');
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [detailsItem, setDetailsItem] = useState<GroceryItem | null>(null);
   const [onlyBestValue, setOnlyBestValue] = useState(false);
   const [quantities, setQuantities] = useState<{ [itemId: string]: number }>({});
   const [isListening, setIsListening] = useState(false);
@@ -204,12 +209,25 @@ export default function GroceryCatalog({
     );
   };
 
+  const availableBrands = useMemo(() => {
+    const present = new Set(products.map((p) => p.brand).filter(Boolean));
+    return PRODUCT_BRANDS.filter((b) => present.has(b));
+  }, [products]);
+
+  const availableCategories = useMemo(() => {
+    const present = new Set(products.map((p) => p.category).filter(Boolean));
+    return PRODUCT_CATEGORIES.filter((c) => present.has(c));
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     return products.filter(item => {
+      const q = searchQuery.toLowerCase();
       // Search text match
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch =
+        item.name.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q) ||
+        item.brand.toLowerCase().includes(q);
 
       // Features restriction match (must match ALL selected restrictions)
       const matchesFeatures = selectedFeatures.length === 0 ||
@@ -220,12 +238,34 @@ export default function GroceryCatalog({
                           item.availabilityZone === 'All Zones' ||
                           item.availabilityZone === selectedZone;
 
+      const matchesBrand =
+        selectedBrand === 'All Brands' || item.brand === selectedBrand;
+
+      const matchesCategory =
+        selectedCategory === 'All Categories' || item.category === selectedCategory;
+
       // Best Value match
       const matchesBestValue = !onlyBestValue || bestValueMap[item.id]?.isBestValue;
 
-      return matchesSearch && matchesFeatures && matchesZone && matchesBestValue;
+      return (
+        matchesSearch &&
+        matchesFeatures &&
+        matchesZone &&
+        matchesBrand &&
+        matchesCategory &&
+        matchesBestValue
+      );
     });
-  }, [products, searchQuery, selectedFeatures, selectedZone, onlyBestValue, bestValueMap]);
+  }, [
+    products,
+    searchQuery,
+    selectedFeatures,
+    selectedZone,
+    selectedBrand,
+    selectedCategory,
+    onlyBestValue,
+    bestValueMap,
+  ]);
 
   const handleAddToCartClick = (item: GroceryItem) => {
     const qty = quantities[item.id] || 1;
@@ -305,6 +345,28 @@ export default function GroceryCatalog({
 
         <div className="flex flex-wrap items-center gap-2">
           <Select
+            id="brand-select"
+            aria-label="Brand"
+            value={selectedBrand}
+            onChange={setSelectedBrand}
+            options={[
+              { value: 'All Brands', label: 'All Brands' },
+              ...PRODUCT_BRANDS.map((brand) => ({ value: brand, label: brand })),
+            ]}
+            className="min-w-40 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
+          />
+          <Select
+            id="category-select"
+            aria-label="Category"
+            value={selectedCategory}
+            onChange={setSelectedCategory}
+            options={[
+              { value: 'All Categories', label: 'All Categories' },
+              ...PRODUCT_CATEGORIES.map((category) => ({ value: category, label: category })),
+            ]}
+            className="min-w-48 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
+          />
+          <Select
             id="zone-select"
             aria-label="Delivery zone"
             value={selectedZone}
@@ -333,33 +395,106 @@ export default function GroceryCatalog({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {DIETARY_OPTIONS.map((diet) => {
-          const active = selectedFeatures.includes(diet.value as FeaturesRestriction);
-          return (
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+          <span className="self-center text-[10px] font-semibold uppercase tracking-wide text-[#64748b] mr-1">
+            Brand
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedBrand('All Brands')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+              selectedBrand === 'All Brands'
+                ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
+            }`}
+          >
+            All
+          </button>
+          {availableBrands.map((brand) => (
             <button
-              key={diet.value}
+              key={brand}
               type="button"
-              onClick={() => toggleFeatures(diet.value as FeaturesRestriction)}
+              onClick={() => setSelectedBrand(brand)}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
-                active
+                selectedBrand === brand
                   ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
                   : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
               }`}
             >
-              {diet.name}
+              {brand}
             </button>
-          );
-        })}
-        {selectedFeatures.length > 0 && (
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <span className="self-center text-[10px] font-semibold uppercase tracking-wide text-[#64748b] mr-1">
+            Category
+          </span>
           <button
             type="button"
-            onClick={() => setSelectedFeatures([])}
-            className="px-3 py-1.5 text-xs font-medium text-[#c45c26] cursor-pointer"
+            onClick={() => setSelectedCategory('All Categories')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+              selectedCategory === 'All Categories'
+                ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
+            }`}
           >
-            Clear
+            All
           </button>
-        )}
+          {availableCategories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setSelectedCategory(category)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                selectedCategory === category
+                  ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                  : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <span className="self-center text-[10px] font-semibold uppercase tracking-wide text-[#64748b] mr-1">
+            Features
+          </span>
+          {DIETARY_OPTIONS.map((diet) => {
+            const active = selectedFeatures.includes(diet.value as FeaturesRestriction);
+            return (
+              <button
+                key={diet.value}
+                type="button"
+                onClick={() => toggleFeatures(diet.value as FeaturesRestriction)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                  active
+                    ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                    : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
+                }`}
+              >
+                {diet.name}
+              </button>
+            );
+          })}
+          {(selectedFeatures.length > 0 ||
+            selectedBrand !== 'All Brands' ||
+            selectedCategory !== 'All Categories') && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedFeatures([]);
+                setSelectedBrand('All Brands');
+                setSelectedCategory('All Categories');
+              }}
+              className="px-3 py-1.5 text-xs font-medium text-[#c45c26] cursor-pointer"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
       </div>
 
       {filteredProducts.length === 0 ? (
@@ -392,7 +527,12 @@ export default function GroceryCatalog({
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
                 className="group flex flex-col bg-white/90 dark:bg-[#121a24] rounded-2xl overflow-hidden shadow-market hover:shadow-market-hover transition-shadow duration-300"
               >
-                <div className="relative aspect-[4/3] bg-[#e8f0f6] dark:bg-[#0B1220] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setDetailsItem(item)}
+                  className="relative aspect-[4/3] bg-[#e8f0f6] dark:bg-[#0B1220] overflow-hidden text-left cursor-pointer"
+                  aria-label={`View details for ${item.name}`}
+                >
                   <ProductImage
                     src={item.imageUrl}
                     alt={item.name}
@@ -419,12 +559,16 @@ export default function GroceryCatalog({
                       {item.rating.toFixed(1)}
                     </span>
                   )}
-                </div>
+                </button>
 
                 <div className="flex flex-1 flex-col p-3.5 sm:p-4 gap-2.5">
-                  <div className="min-h-0">
+                  <button
+                    type="button"
+                    onClick={() => setDetailsItem(item)}
+                    className="min-h-0 text-left cursor-pointer"
+                  >
                     <p className="text-[10px] font-medium uppercase tracking-wide text-[#0284c7] dark:text-sky-400">
-                      {item.category}
+                      {item.brand} · {item.category}
                     </p>
                     <h3 className="mt-0.5 font-display font-semibold text-[15px] sm:text-base text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2">
                       {item.name}
@@ -432,7 +576,7 @@ export default function GroceryCatalog({
                     <p className="mt-1 text-[11px] text-[#64748b] dark:text-[#8a9eb0]">
                       {item.unit}
                     </p>
-                  </div>
+                  </button>
 
                   <div className="mt-auto space-y-2.5 pt-1">
                     <div className="flex items-end justify-between gap-2">
@@ -523,6 +667,14 @@ export default function GroceryCatalog({
           })}
         </div>
       )}
+
+      <ProductDetailsModal
+        item={detailsItem}
+        isOpen={!!detailsItem}
+        onClose={() => setDetailsItem(null)}
+        onAddToCart={onAddToCart}
+        onAddToast={onAddToast}
+      />
     </div>
   );
 }
