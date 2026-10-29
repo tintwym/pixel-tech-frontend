@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShoppingCart, MapPin, Mic, TrendingUp, WifiOff, Star } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, Mic, TrendingUp, WifiOff, Star, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { GroceryItem, FeaturesRestriction } from '@/types';
 import { DIETARY_OPTIONS, ZONE_OPTIONS, ZONE_DELIVERY_STATUS } from '@/data/products';
 import { PRODUCT_BRANDS, PRODUCT_CATEGORIES } from '@/data/catalogTaxonomy';
@@ -13,7 +13,13 @@ import Select from '@/components/Select';
 
 interface GroceryCatalogProps {
   products: GroceryItem[];
-  onAddToCart: (item: GroceryItem, qty: number, isSub: boolean, freq?: 'weekly' | 'biweekly' | 'monthly') => boolean | void;
+  onAddToCart: (
+    item: GroceryItem,
+    qty: number,
+    isSub: boolean,
+    freq?: 'weekly' | 'biweekly' | 'monthly',
+    selectedColor?: string
+  ) => boolean | void;
   selectedZone: string;
   setSelectedZone: (zone: string) => void;
   onAddToast: (title: string, msg: string, type: 'success' | 'warning' | 'info') => void;
@@ -89,6 +95,7 @@ export default function GroceryCatalog({
   const [recognition, setRecognition] = useState<any>(null);
   const [expandedSparklines, setExpandedSparklines] = useState<{ [itemId: string]: boolean }>({});
   const [isOffline, setIsOffline] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Best value = lowest unit price within the same category (not global unit-type)
   const bestValueMap = useMemo(() => {
@@ -219,6 +226,22 @@ export default function GroceryCatalog({
     return PRODUCT_CATEGORIES.filter((c) => present.has(c));
   }, [products]);
 
+  const availableFeatures = useMemo(() => {
+    const present = new Set(products.flatMap((p) => p.featuresRestrictions || []));
+    return DIETARY_OPTIONS.filter((opt) => present.has(opt.value as FeaturesRestriction));
+  }, [products]);
+
+  useEffect(() => {
+    setSelectedFeatures((prev) =>
+      prev.filter((f) => availableFeatures.some((opt) => opt.value === f))
+    );
+  }, [availableFeatures]);
+
+  const activeChipFilters =
+    (selectedBrand !== 'All Brands' ? 1 : 0) +
+    (selectedCategory !== 'All Categories' ? 1 : 0) +
+    selectedFeatures.length;
+
   const filteredProducts = useMemo(() => {
     return products.filter(item => {
       const q = searchQuery.toLowerCase();
@@ -345,28 +368,6 @@ export default function GroceryCatalog({
 
         <div className="flex flex-wrap items-center gap-2">
           <Select
-            id="brand-select"
-            aria-label="Brand"
-            value={selectedBrand}
-            onChange={setSelectedBrand}
-            options={[
-              { value: 'All Brands', label: 'All Brands' },
-              ...PRODUCT_BRANDS.map((brand) => ({ value: brand, label: brand })),
-            ]}
-            className="min-w-40 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
-          />
-          <Select
-            id="category-select"
-            aria-label="Category"
-            value={selectedCategory}
-            onChange={setSelectedCategory}
-            options={[
-              { value: 'All Categories', label: 'All Categories' },
-              ...PRODUCT_CATEGORIES.map((category) => ({ value: category, label: category })),
-            ]}
-            className="min-w-48 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
-          />
-          <Select
             id="zone-select"
             aria-label="Delivery zone"
             value={selectedZone}
@@ -396,92 +397,111 @@ export default function GroceryCatalog({
       </div>
 
       <div className="space-y-2">
-        <div className="flex flex-wrap gap-2">
-          <span className="self-center text-[10px] font-semibold uppercase tracking-wide text-[#64748b] mr-1">
-            Brand
-          </span>
-          <button
-            type="button"
-            onClick={() => setSelectedBrand('All Brands')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
-              selectedBrand === 'All Brands'
-                ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
-                : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
-            }`}
-          >
-            All
-          </button>
-          {availableBrands.map((brand) => (
+        <button
+          type="button"
+          className="md:hidden inline-flex items-center gap-2 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] px-3.5 py-2.5 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5] cursor-pointer"
+          onClick={() => setFiltersOpen((open) => !open)}
+          aria-expanded={filtersOpen}
+        >
+          <SlidersHorizontal className="w-4 h-4 text-[#0284c7]" />
+          Filters
+          {activeChipFilters > 0 && (
+            <span className="rounded-full bg-[#e0f2fe] px-1.5 py-0.5 text-[10px] font-bold text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]">
+              {activeChipFilters}
+            </span>
+          )}
+          <ChevronDown className={`w-4 h-4 text-[#64748b] transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        <div className={`space-y-2 ${filtersOpen ? 'block' : 'hidden'} md:block`}>
+          <div className="flex flex-wrap gap-2">
+            <span className="self-center text-[10px] font-semibold uppercase tracking-wide text-[#64748b] mr-1">
+              Brand
+            </span>
             <button
-              key={brand}
               type="button"
-              onClick={() => setSelectedBrand(brand)}
+              onClick={() => setSelectedBrand('All Brands')}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
-                selectedBrand === brand
+                selectedBrand === 'All Brands'
                   ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
                   : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
               }`}
             >
-              {brand}
+              All
             </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <span className="self-center text-[10px] font-semibold uppercase tracking-wide text-[#64748b] mr-1">
-            Category
-          </span>
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('All Categories')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
-              selectedCategory === 'All Categories'
-                ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
-                : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
-            }`}
-          >
-            All
-          </button>
-          {availableCategories.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => setSelectedCategory(category)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
-                selectedCategory === category
-                  ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
-                  : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <span className="self-center text-[10px] font-semibold uppercase tracking-wide text-[#64748b] mr-1">
-            Features
-          </span>
-          {DIETARY_OPTIONS.map((diet) => {
-            const active = selectedFeatures.includes(diet.value as FeaturesRestriction);
-            return (
+            {availableBrands.map((brand) => (
               <button
-                key={diet.value}
+                key={brand}
                 type="button"
-                onClick={() => toggleFeatures(diet.value as FeaturesRestriction)}
+                onClick={() => setSelectedBrand(brand)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
-                  active
+                  selectedBrand === brand
                     ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
                     : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
                 }`}
               >
-                {diet.name}
+                {brand}
               </button>
-            );
-          })}
-          {(selectedFeatures.length > 0 ||
-            selectedBrand !== 'All Brands' ||
-            selectedCategory !== 'All Categories') && (
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <span className="self-center text-[10px] font-semibold uppercase tracking-wide text-[#64748b] mr-1">
+              Category
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('All Categories')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                selectedCategory === 'All Categories'
+                  ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                  : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
+              }`}
+            >
+              All
+            </button>
+            {availableCategories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setSelectedCategory(category)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                  selectedCategory === category
+                    ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                    : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          {availableFeatures.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <span className="self-center text-[10px] font-semibold uppercase tracking-wide text-[#64748b] mr-1">
+                Features
+              </span>
+              {availableFeatures.map((diet) => {
+                const active = selectedFeatures.includes(diet.value as FeaturesRestriction);
+                return (
+                  <button
+                    key={diet.value}
+                    type="button"
+                    onClick={() => toggleFeatures(diet.value as FeaturesRestriction)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                      active
+                        ? 'bg-[#e0f2fe] text-[#0c4a6e] dark:bg-[#0c4a6e] dark:text-[#e0f2fe]'
+                        : 'bg-white/60 dark:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/50'
+                    }`}
+                  >
+                    {diet.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {activeChipFilters > 0 && (
             <button
               type="button"
               onClick={() => {

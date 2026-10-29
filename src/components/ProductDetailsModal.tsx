@@ -5,12 +5,19 @@ import { X, ShoppingCart, Star, MapPin, ChevronLeft, ChevronRight } from 'lucide
 import { AnimatePresence, motion } from 'motion/react';
 import { GroceryItem } from '@/types';
 import ProductImage from '@/components/ProductImage';
+import { resolveProductGallery } from '@/lib/productGallery';
 
 interface ProductDetailsModalProps {
   item: GroceryItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (item: GroceryItem, qty: number, isSub: boolean) => boolean | void;
+  onAddToCart: (
+    item: GroceryItem,
+    qty: number,
+    isSub: boolean,
+    freq?: 'weekly' | 'biweekly' | 'monthly',
+    selectedColor?: string
+  ) => boolean | void;
   onAddToast: (title: string, msg: string, type: 'success' | 'warning' | 'info') => void;
 }
 
@@ -21,20 +28,28 @@ export default function ProductDetailsModal({
   onAddToCart,
   onAddToast,
 }: ProductDetailsModalProps) {
-  const gallery = useMemo(() => {
-    if (!item) return [];
-    const urls = (item.imageUrls?.length ? item.imageUrls : [item.imageUrl]).filter(Boolean);
-    return Array.from(new Set(urls));
-  }, [item]);
-
+  const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [qty, setQty] = useState(1);
 
+  const { colors, gallery } = useMemo(() => {
+    if (!item) return { colors: [], gallery: [] as string[] };
+    return resolveProductGallery(item.imageUrl, item.imageUrls, selectedColorId);
+  }, [item, selectedColorId]);
+
+  const activeColor = colors.find((c) => c.id === selectedColorId) || colors[0] || null;
+
   useEffect(() => {
     if (!isOpen || !item) return;
+    const next = resolveProductGallery(item.imageUrl, item.imageUrls, null);
+    setSelectedColorId(next.colors[0]?.id ?? null);
     setActiveIndex(0);
     setQty(1);
   }, [isOpen, item?.id]);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [selectedColorId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -68,12 +83,17 @@ export default function ProductDetailsModal({
       onAddToast('Insufficient Stock', `Only ${item.stock} items left in inventory.`, 'warning');
       return;
     }
-    const added = onAddToCart(item, qty, false);
+    const colorLabel = activeColor?.label;
+    const added = onAddToCart(item, qty, false, undefined, activeColor?.id);
     if (added === false) {
       onAddToast('Cart limit reached', `You already have the max available stock of ${item.name}.`, 'warning');
       return;
     }
-    onAddToast('Added to Cart', `${qty}× ${item.name} added.`, 'success');
+    onAddToast(
+      'Added to Cart',
+      colorLabel ? `${qty}× ${item.name} · ${colorLabel} added.` : `${qty}× ${item.name} added.`,
+      'success'
+    );
   };
 
   return (
@@ -130,7 +150,11 @@ export default function ProductDetailsModal({
                 <div className="relative aspect-[4/3] sm:aspect-square">
                   <ProductImage
                     src={activeSrc}
-                    alt={item.name}
+                    alt={
+                      activeColor
+                        ? `${item.name} — ${activeColor.label}`
+                        : item.name
+                    }
                     className="h-full w-full object-cover"
                   />
                   {gallery.length > 1 && (
@@ -216,6 +240,41 @@ export default function ProductDetailsModal({
                     </p>
                   )}
                 </div>
+
+                {colors.length > 0 && (
+                  <div>
+                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
+                      Color
+                      {activeColor && (
+                        <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                          {activeColor.label}
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Choose color">
+                      {colors.map((color) => {
+                        const selected = activeColor?.id === color.id;
+                        return (
+                          <button
+                            key={color.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            aria-label={color.label}
+                            title={color.label}
+                            onClick={() => setSelectedColorId(color.id)}
+                            className={`relative h-9 w-9 rounded-full border-2 transition-shadow cursor-pointer ${
+                              selected
+                                ? 'border-[#0284c7] shadow-[0_0_0_2px_rgba(2,132,199,0.25)]'
+                                : 'border-slate-200 dark:border-white/20 hover:border-[#0284c7]/50'
+                            }`}
+                            style={{ backgroundColor: color.swatch }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {item.description && (
                   <div>

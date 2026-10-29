@@ -76,6 +76,9 @@ export interface CartItem {
   quantity: number;
   isSubscription: boolean;
   frequency?: 'weekly' | 'biweekly' | 'monthly';
+  /** Finish/color id when the shopper picked one in product details (e.g. starwhite). */
+  selectedColor?: string;
+  selectedColorLabel?: string;
 }
 
 export interface DeliveryAddress {

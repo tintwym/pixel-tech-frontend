@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 import { GroceryItem, CartItem, Order, UserProfile, OrderStatus } from '@/types';
 import { INITIAL_GROCERIES } from '@/data/products';
+import { resolveProductGallery } from '@/lib/productGallery';
 
 import GroceryCatalog from '@/components/GroceryCatalog';
 import CartAndCheckout from '@/components/CartAndCheckout';
@@ -342,15 +343,39 @@ export default function Storefront() {
 
   // Cart operations — always resolve live stock from the products catalog
   // Caps by aggregated qty across one-time + subscription lines for the same SKU.
-  const handleAddToCart = (item: GroceryItem, qty: number, isSub: boolean, freq?: 'weekly' | 'biweekly' | 'monthly'): boolean => {
+  const sameCartLine = (
+    line: CartItem,
+    itemId: string,
+    isSub: boolean,
+    selectedColor?: string
+  ) =>
+    line.item.id === itemId &&
+    line.isSubscription === isSub &&
+    (line.selectedColor || '') === (selectedColor || '');
+
+  const handleAddToCart = (
+    item: GroceryItem,
+    qty: number,
+    isSub: boolean,
+    freq?: 'weekly' | 'biweekly' | 'monthly',
+    selectedColor?: string
+  ): boolean => {
     const live = products.find(g => g.id === item.id) || item;
     if (live.stock <= 0 || qty <= 0) return false;
 
+    const colorKey = selectedColor || '';
+    const { colors, gallery } = resolveProductGallery(live.imageUrl, live.imageUrls, colorKey || null);
+    const colorMeta = colors.find((c) => c.id === colorKey);
+    const lineItem: GroceryItem = {
+      ...live,
+      imageUrl: gallery[0] || live.imageUrl,
+    };
+
     const otherQty = cart
-      .filter(i => i.item.id === live.id && i.isSubscription !== isSub)
+      .filter((i) => i.item.id === live.id && !sameCartLine(i, live.id, isSub, selectedColor))
       .reduce((sum, i) => sum + i.quantity, 0);
     const maxForThisLine = Math.max(0, live.stock - otherQty);
-    const existing = cart.find(i => i.item.id === live.id && i.isSubscription === isSub);
+    const existing = cart.find((i) => sameCartLine(i, live.id, isSub, selectedColor));
     const currentLineQty = existing?.quantity ?? 0;
     if (maxForThisLine <= 0 || currentLineQty >= maxForThisLine) return false;
 
@@ -365,51 +390,70 @@ export default function Storefront() {
 
     setCart(prev => {
       const other = prev
-        .filter(i => i.item.id === live.id && i.isSubscription !== isSub)
+        .filter((i) => i.item.id === live.id && !sameCartLine(i, live.id, isSub, selectedColor))
         .reduce((sum, i) => sum + i.quantity, 0);
       const maxLine = Math.max(0, live.stock - other);
       if (maxLine <= 0) return prev;
 
-      const line = prev.find(i => i.item.id === live.id && i.isSubscription === isSub);
+      const line = prev.find((i) => sameCartLine(i, live.id, isSub, selectedColor));
       if (line) {
         const nextQty = Math.min(maxLine, line.quantity + qty);
         if (nextQty === line.quantity) return prev;
-        return prev.map(i =>
-          (i.item.id === live.id && i.isSubscription === isSub)
-            ? { ...i, item: live, quantity: nextQty }
+        return prev.map((i) =>
+          sameCartLine(i, live.id, isSub, selectedColor)
+            ? {
+                ...i,
+                item: lineItem,
+                quantity: nextQty,
+                selectedColor: colorMeta?.id || selectedColor,
+                selectedColorLabel: colorMeta?.label,
+              }
             : i
         );
       }
-      return [...prev, { item: live, quantity: Math.min(maxLine, qty), isSubscription: isSub, frequency: freq }];
+      return [
+        ...prev,
+        {
+          item: lineItem,
+          quantity: Math.min(maxLine, qty),
+          isSubscription: isSub,
+          frequency: freq,
+          selectedColor: colorMeta?.id || selectedColor,
+          selectedColorLabel: colorMeta?.label,
+        },
+      ];
     });
     return true;
   };
 
-  const handleUpdateCartQty = (itemId: string, isSub: boolean, qty: number) => {
+  const handleUpdateCartQty = (itemId: string, isSub: boolean, qty: number, selectedColor?: string) => {
     if (qty <= 0) {
-      handleRemoveFromCart(itemId, isSub);
+      handleRemoveFromCart(itemId, isSub, selectedColor);
       return;
     }
     const liveStock = products.find(g => g.id === itemId)?.stock ?? 0;
     setCart(prev => {
       const otherQty = prev
-        .filter(i => i.item.id === itemId && i.isSubscription !== isSub)
+        .filter((i) => i.item.id === itemId && !sameCartLine(i, itemId, isSub, selectedColor))
         .reduce((sum, i) => sum + i.quantity, 0);
       const maxForThisLine = Math.max(0, liveStock - otherQty);
-      return prev.map(i =>
-        (i.item.id === itemId && i.isSubscription === isSub)
+      return prev.map((i) =>
+        sameCartLine(i, itemId, isSub, selectedColor)
           ? {
               ...i,
-              item: products.find(g => g.id === itemId) || i.item,
-              quantity: Math.min(maxForThisLine, qty)
+              item: {
+                ...(products.find((g) => g.id === itemId) || i.item),
+                imageUrl: i.item.imageUrl,
+              },
+              quantity: Math.min(maxForThisLine, qty),
             }
           : i
       );
     });
   };
 
-  const handleRemoveFromCart = (itemId: string, isSub: boolean) => {
-    setCart(prev => prev.filter(i => !(i.item.id === itemId && i.isSubscription === isSub)));
+  const handleRemoveFromCart = (itemId: string, isSub: boolean, selectedColor?: string) => {
+    setCart((prev) => prev.filter((i) => !sameCartLine(i, itemId, isSub, selectedColor)));
     handleAddToast('Item Removed', 'Product subtracted from cart.', 'info');
   };
 
