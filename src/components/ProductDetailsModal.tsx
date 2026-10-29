@@ -5,19 +5,15 @@ import { X, ShoppingCart, Star, MapPin, ChevronLeft, ChevronRight } from 'lucide
 import { AnimatePresence, motion } from 'motion/react';
 import { GroceryItem } from '@/types';
 import ProductImage from '@/components/ProductImage';
-import { defaultColorId, resolveProductGallery } from '@/lib/productGallery';
+import { resolveProductGallery } from '@/lib/productGallery';
 import {
   MOBILE_STORAGE_OPTIONS,
-  defaultMobileStorage,
   isSmartphoneCategory,
   mobileStoragePrice,
 } from '@/data/mobileOptions';
 import {
   LAPTOP_MEMORY_OPTIONS,
   LAPTOP_STORAGE_OPTIONS,
-  defaultLaptopMemory,
-  defaultLaptopSize,
-  defaultLaptopStorage,
   formatLaptopConfig,
   isLaptopCategory,
   laptopConfigPrice,
@@ -48,9 +44,9 @@ export default function ProductDetailsModal({
   onAddToast,
 }: ProductDetailsModalProps) {
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
-  const [selectedStorage, setSelectedStorage] = useState<string>('256GB');
+  const [selectedStorage, setSelectedStorage] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedMemory, setSelectedMemory] = useState<LaptopMemory>('16GB');
+  const [selectedMemory, setSelectedMemory] = useState<LaptopMemory | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [qty, setQty] = useState(1);
 
@@ -71,29 +67,22 @@ export default function ProductDetailsModal({
     );
   }, [item, selectedColorId, selectedSize, isLaptop]);
 
-  const activeColor = colors.find((c) => c.id === selectedColorId) || colors[0] || null;
+  const activeColor = colors.find((c) => c.id === selectedColorId) || null;
   const displayPrice = item
-    ? isPhone
+    ? isPhone && selectedStorage
       ? mobileStoragePrice(item.price, selectedStorage)
-      : isLaptop
+      : isLaptop && selectedStorage && selectedMemory
         ? laptopConfigPrice(item.price, selectedSize, selectedMemory, selectedStorage)
         : item.price
     : 0;
 
   useEffect(() => {
     if (!isOpen || !item) return;
-    const next = resolveProductGallery(item.imageUrl, item.imageUrls, null);
-    setSelectedColorId(defaultColorId(next.colors));
-    if (isLaptopCategory(item.category)) {
-      const sizes = laptopSizeOptions(item.name, item.imageUrls || []);
-      setSelectedSize(defaultLaptopSize(item.name, sizes));
-      setSelectedMemory(defaultLaptopMemory(item.name));
-      setSelectedStorage(defaultLaptopStorage(item.name));
-    } else {
-      setSelectedSize(null);
-      setSelectedMemory('16GB');
-      setSelectedStorage(defaultMobileStorage(item.name));
-    }
+    // Apple-style: nothing selected until the shopper chooses.
+    setSelectedColorId(null);
+    setSelectedStorage(null);
+    setSelectedSize(null);
+    setSelectedMemory(null);
     setActiveIndex(0);
     setQty(1);
   }, [isOpen, item?.id]);
@@ -134,15 +123,31 @@ export default function ProductDetailsModal({
       onAddToast('Insufficient Stock', `Only ${item.stock} items left in inventory.`, 'warning');
       return;
     }
+    if (colors.length > 0 && !selectedColorId) {
+      onAddToast('Choose a color', 'Select a finish before adding to cart.', 'warning');
+      return;
+    }
+    if (isLaptop && sizeOptions.length > 0 && !selectedSize) {
+      onAddToast('Choose a size', 'Select a screen size before adding to cart.', 'warning');
+      return;
+    }
+    if (isLaptop && !selectedMemory) {
+      onAddToast('Choose memory', 'Select memory before adding to cart.', 'warning');
+      return;
+    }
+    if ((isPhone || isLaptop) && !selectedStorage) {
+      onAddToast('Choose storage', 'Select storage before adding to cart.', 'warning');
+      return;
+    }
     const pricedItem: GroceryItem = {
       ...item,
       price: displayPrice,
       imageUrl: gallery[0] || item.imageUrl,
     };
     const configLabel = isLaptop
-      ? formatLaptopConfig(selectedSize, selectedMemory, selectedStorage)
+      ? formatLaptopConfig(selectedSize, selectedMemory || '', selectedStorage || '')
       : isPhone
-        ? selectedStorage
+        ? selectedStorage || undefined
         : undefined;
     const added = onAddToCart(
       pricedItem,
@@ -313,15 +318,13 @@ export default function ProductDetailsModal({
                   <div>
                     <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
                       Color
-                      {activeColor && (
-                        <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                          {activeColor.label}
-                        </span>
-                      )}
+                      <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                        {activeColor?.label || 'Select'}
+                      </span>
                     </h3>
                     <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Choose color">
                       {colors.map((color) => {
-                        const selected = activeColor?.id === color.id;
+                        const selected = selectedColorId === color.id;
                         return (
                           <button
                             key={color.id}
@@ -348,11 +351,9 @@ export default function ProductDetailsModal({
                   <div>
                     <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
                       Size
-                      {selectedSize && (
-                        <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                          {selectedSize}
-                        </span>
-                      )}
+                      <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                        {selectedSize || 'Select'}
+                      </span>
                     </h3>
                     <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Choose size">
                       {sizeOptions.map((size) => {
@@ -383,7 +384,7 @@ export default function ProductDetailsModal({
                     <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
                       Memory
                       <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                        {selectedMemory}
+                        {selectedMemory || 'Select'}
                       </span>
                     </h3>
                     <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Choose memory">
@@ -415,7 +416,7 @@ export default function ProductDetailsModal({
                     <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
                       Storage
                       <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                        {selectedStorage}
+                        {selectedStorage || 'Select'}
                       </span>
                     </h3>
                     <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Choose storage">

@@ -234,6 +234,20 @@ export function defaultColorId(
   return colors[0].id;
 }
 
+/** Apple-style hero set: unselect / size shots until the shopper picks a finish. */
+export function defaultHeroGallery(urls: string[], fallback: string): string[] {
+  const heroes = urls.filter((url) => {
+    const file = filenameFromUrl(url).toLowerCase();
+    return file.includes('unselect');
+  });
+  if (heroes.length) return heroes;
+
+  const neutral = urls.filter((url) => !extractColorIdFromUrl(url));
+  if (neutral.length) return neutral;
+
+  return fallback ? [fallback] : urls.slice(0, 1);
+}
+
 export function resolveProductGallery(
   imageUrl: string,
   imageUrls: string[] | undefined,
@@ -247,21 +261,32 @@ export function resolveProductGallery(
   const colors = buildColorOptions(all);
   const sized = filterUrlsBySize(all, selectedSize);
 
+  // Nothing chosen yet → keep the product default gallery (not a finish).
+  if (!selectedColorId) {
+    return {
+      colors,
+      gallery: defaultHeroGallery(sized.length ? sized : all, imageUrl),
+    };
+  }
+
   if (colors.length === 0) {
     return { colors, gallery: sized.length ? sized : all };
   }
 
-  const preferredId = selectedColorId || defaultColorId(colors);
-  const active = colors.find((c) => c.id === preferredId) || colors[0];
+  const active = colors.find((c) => c.id === selectedColorId);
+  if (!active) {
+    return {
+      colors,
+      gallery: defaultHeroGallery(sized.length ? sized : all, imageUrl),
+    };
+  }
+
   const sizedColorUrls = sized.filter((u) => extractColorIdFromUrl(u) === active.id);
-  const fallbackColorUrls = active.imageUrls;
   const gallery = sizedColorUrls.length
     ? sizedColorUrls
-    : fallbackColorUrls.length
-      ? fallbackColorUrls
-      : sized.length
-        ? sized
-        : all;
+    : active.imageUrls.length
+      ? active.imageUrls
+      : defaultHeroGallery(sized.length ? sized : all, imageUrl);
 
   return { colors, gallery };
 }
