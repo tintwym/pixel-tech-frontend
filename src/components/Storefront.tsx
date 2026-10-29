@@ -161,7 +161,7 @@ export default function Storefront() {
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   /** Mobile bottom tab — Home · Products · Tracking · Profile (cart lives in the header) */
   const [mobileTab, setMobileTab] = useState<'home' | 'products' | 'tracking' | 'profile'>('home');
-  const [isMobileProfileSheetOpen, setIsMobileProfileSheetOpen] = useState(false);
+  const isMobileProfileOpen = mobileTab === 'profile';
 
   // Core Data States
   const [products, setProducts] = useState<GroceryItem[]>(INITIAL_GROCERIES);
@@ -316,7 +316,6 @@ export default function Storefront() {
     setMobileTab('home');
     setIsCartOpen(false);
     setIsProfileOpen(false);
-    setIsMobileProfileSheetOpen(false);
     setIsNotificationOpen(false);
     setActiveTrackingOrder(null);
     setIsVoiceModalOpen(false);
@@ -328,7 +327,6 @@ export default function Storefront() {
     setMobileTab('products');
     setIsCartOpen(false);
     setIsProfileOpen(false);
-    setIsMobileProfileSheetOpen(false);
     setIsNotificationOpen(false);
     setActiveTrackingOrder(null);
     setIsVoiceModalOpen(false);
@@ -339,9 +337,7 @@ export default function Storefront() {
   };
 
   const goMobileCart = () => {
-    setMobileTab((tab) => (tab === 'tracking' || tab === 'profile' ? 'home' : tab));
     setIsProfileOpen(false);
-    setIsMobileProfileSheetOpen(false);
     setIsNotificationOpen(false);
     setActiveTrackingOrder(null);
     setIsCartOpen(true);
@@ -351,7 +347,6 @@ export default function Storefront() {
     setMobileTab('tracking');
     setIsCartOpen(false);
     setIsProfileOpen(false);
-    setIsMobileProfileSheetOpen(false);
     setIsNotificationOpen(false);
     setIsOrderDetailsOpen(false);
     const trackable =
@@ -373,13 +368,8 @@ export default function Storefront() {
     setMobileTab('profile');
     setIsCartOpen(false);
     setIsNotificationOpen(false);
+    setIsOrderDetailsOpen(false);
     setActiveTrackingOrder(null);
-    setIsMobileProfileSheetOpen(true);
-  };
-
-  const closeMobileProfileSheet = () => {
-    setIsMobileProfileSheetOpen(false);
-    setMobileTab((tab) => (tab === 'profile' ? 'home' : tab));
   };
 
   const handleSignOut = () => {
@@ -927,10 +917,7 @@ export default function Storefront() {
 
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => {
-          setIsAuthOpen(false);
-          setMobileTab((tab) => (tab === 'profile' ? 'home' : tab));
-        }}
+        onClose={() => setIsAuthOpen(false)}
         onAddToast={handleAddToast}
         onAuthenticated={(user, displayName) => {
           setIsSignedIn(true);
@@ -947,33 +934,25 @@ export default function Storefront() {
         }}
       />
 
-      {/* Mobile Profile — full settings-style screen (not a short action sheet) */}
+      {/* Mobile Profile — tab page (leave via bottom tabs, not a Done close) */}
       <AnimatePresence>
-        {isMobileProfileSheetOpen && (
+        {isMobileProfileOpen && (
           <motion.div
-            className="sm:hidden fixed inset-0 z-50 flex flex-col bg-[#eef4f8] dark:bg-[#0B1220]"
-            role="dialog"
-            aria-modal="true"
+            className="sm:hidden fixed inset-0 z-30 flex flex-col bg-[#eef4f8] dark:bg-[#0B1220]"
+            role="region"
             aria-labelledby="mobile-profile-title"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
           >
-            <header className="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b border-[#0284c7]/10 dark:border-white/10 bg-[#eef4f8]/95 dark:bg-[#0B1220]/95 backdrop-blur-md">
+            <header className="flex items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b border-[#0284c7]/10 dark:border-white/10 bg-[#eef4f8]/95 dark:bg-[#0B1220]/95 backdrop-blur-md">
               <h2
                 id="mobile-profile-title"
                 className="font-display text-xl font-semibold text-[#0f172a] dark:text-[#e7eef5]"
               >
                 Profile
               </h2>
-              <button
-                type="button"
-                onClick={closeMobileProfileSheet}
-                className="px-3 py-1.5 rounded-full text-sm font-semibold text-[#0284c7] dark:text-sky-400 hover:bg-[#0284c7]/10 cursor-pointer"
-              >
-                Done
-              </button>
             </header>
 
             <div className="flex-1 overflow-y-auto px-4 py-6 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))]">
@@ -1059,10 +1038,7 @@ export default function Storefront() {
                   <>
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsMobileProfileSheetOpen(false);
-                        setIsProfileOpen(true);
-                      }}
+                      onClick={() => setIsProfileOpen(true)}
                       className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
                     >
                       <UserRound className="w-5 h-5 text-[#0284c7] shrink-0" />
@@ -1074,10 +1050,7 @@ export default function Storefront() {
                     <div className="mx-4 border-t border-[#0284c7]/10 dark:border-white/10" />
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsMobileProfileSheetOpen(false);
-                        setIsOrderDetailsOpen(true);
-                      }}
+                      onClick={() => setIsOrderDetailsOpen(true)}
                       className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
                     >
                       <Package className="w-5 h-5 text-[#0284c7] shrink-0" />
@@ -1089,10 +1062,7 @@ export default function Storefront() {
                     <div className="mx-4 border-t border-[#0284c7]/10 dark:border-white/10" />
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsMobileProfileSheetOpen(false);
-                        setIsNotificationOpen(true);
-                      }}
+                      onClick={() => setIsNotificationOpen(true)}
                       className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
                     >
                       <Bell className="w-5 h-5 text-[#0284c7] shrink-0" />
@@ -1105,10 +1075,7 @@ export default function Storefront() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsMobileProfileSheetOpen(false);
-                      setIsAuthOpen(true);
-                    }}
+                    onClick={() => setIsAuthOpen(true)}
                     className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
                   >
                     <LogIn className="w-5 h-5 text-[#0284c7] shrink-0" />
@@ -1123,10 +1090,7 @@ export default function Storefront() {
               {isSignedIn && (
                 <button
                   type="button"
-                  onClick={() => {
-                    handleSignOut();
-                    closeMobileProfileSheet();
-                  }}
+                  onClick={handleSignOut}
                   className="mt-8 w-full text-center text-sm font-medium text-red-500 dark:text-red-400 cursor-pointer py-2"
                 >
                   Sign out
@@ -1142,10 +1106,7 @@ export default function Storefront() {
         profile={profile}
         orders={orders}
         isOpen={isProfileOpen}
-        onClose={() => {
-          setIsProfileOpen(false);
-          setMobileTab((tab) => (tab === 'profile' ? 'home' : tab));
-        }}
+        onClose={() => setIsProfileOpen(false)}
         onUpdateProfile={(updater) => {
           if (typeof updater === 'function') {
             setProfile(updater);
