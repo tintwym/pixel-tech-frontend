@@ -46,7 +46,8 @@ export type FeaturesRestriction =
   | 'Always-On'
   | 'watchOS'
   | 'Hi-Res'
-  | 'DeX';
+  | 'DeX'
+  | 'Foldable';
 
 export interface GroceryItem {
   id: string;
@@ -58,6 +59,8 @@ export interface GroceryItem {
   price: number; // in MMK
   currency: string; // "MMK" (and USD support)
   imageUrl: string;
+  /** Full gallery when available; card UI uses imageUrl (first image). */
+  imageUrls?: string[];
   stock: number;
   maxStock: number;
   availabilityZone: 'Downtown Yangon' | 'Yankin' | 'Bahan' | 'Hlaing' | 'All Zones';

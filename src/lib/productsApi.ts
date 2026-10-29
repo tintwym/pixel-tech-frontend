@@ -71,12 +71,18 @@ function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
   const name = api.name?.trim() || local?.name || 'Product';
   const priceNum = Number(api.price);
   const stock = typeof api.stock === 'number' ? api.stock : local?.stock ?? 0;
-  const apiImage = api.images?.find((img) => img.path)?.path;
+  const apiGallery =
+    api.images
+      ?.map((img) => img.path)
+      .filter((path): path is string => Boolean(path) && !isPlaceholderImage(path)) ?? [];
+  const apiImage = apiGallery[0];
   // Prefer real photos: skip grey dummyimage/placehold seeds from the API.
   const imageUrl =
-    (apiImage && !isPlaceholderImage(apiImage) ? apiImage : undefined) ||
+    apiImage ||
     local?.imageUrl ||
     'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80';
+  const imageUrls =
+    apiGallery.length > 0 ? apiGallery : local?.imageUrls?.length ? local.imageUrls : [imageUrl];
 
   return {
     // Keep stable local ids when names match so demo features (Buy Again, restock sync) work.
@@ -88,6 +94,7 @@ function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
     price: Number.isFinite(priceNum) ? priceNum : local?.price ?? 0,
     currency: 'MMK',
     imageUrl,
+    imageUrls,
     stock,
     maxStock: Math.max(local?.maxStock ?? stock, stock),
     availabilityZone: local?.availabilityZone ?? 'All Zones',

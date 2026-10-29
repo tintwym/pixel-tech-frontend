@@ -196,6 +196,54 @@ export const INITIAL_GROCERIES: GroceryItem[] = [
     isSubscriptionAvailable: true,
     rating: 4.6,
     unit: '1 unit'
+  },
+  {
+    id: 'p13',
+    name: 'iPhone 18 Pro Max — 256GB',
+    description: 'Next-gen Pro Max with advanced camera system, larger Super Retina XDR display, and all-day battery. Flagship titanium design.',
+    category: 'Mobile',
+    price: 6499000,
+    currency: 'MMK',
+    imageUrl: 'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240448/pixel-tech/products/iphone-18-pro-model-unselect-gallery-1-202609-680eee70-16a6-4f59-9f14-751af72ab9c6.jpg',
+    imageUrls: [
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240448/pixel-tech/products/iphone-18-pro-model-unselect-gallery-1-202609-680eee70-16a6-4f59-9f14-751af72ab9c6.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240449/pixel-tech/products/iphone-18-pro-model-unselect-gallery-2-202609-b56353a7-a1bf-4c7b-9db2-a2c9c2a0d241.jpg'
+    ],
+    stock: 10,
+    maxStock: 14,
+    availabilityZone: 'Yankin',
+    featuresRestrictions: ['5G', 'OLED', 'Pro Camera', 'USB-C'],
+    isSubscriptionAvailable: true,
+    rating: 4.9,
+    unit: '1 unit'
+  },
+  {
+    id: 'p14',
+    name: 'iPhone Duo — 256GB',
+    description: 'Book-style foldable iPhone with dual finishes (Starwhite / Nightsky), expansive inner display, cover screen, and dual-camera system.',
+    category: 'Mobile',
+    price: 7999000,
+    currency: 'MMK',
+    imageUrl: 'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240450/pixel-tech/products/iphone-duo-finish-unselect-gallery-2-202609-a5d00f92-2dee-49fb-8a88-01bdd19bd854.jpg',
+    imageUrls: [
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240450/pixel-tech/products/iphone-duo-finish-unselect-gallery-2-202609-a5d00f92-2dee-49fb-8a88-01bdd19bd854.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240450/pixel-tech/products/iphone-duo-finish-select-202609-starwhite-44c1b38b-d407-4431-b9b9-a96da108fa84.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240451/pixel-tech/products/iphone-duo-finish-select-202609-starwhite_AV1-10ede2ff-c9b3-4bb4-948a-456fb51800d2.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240452/pixel-tech/products/iphone-duo-finish-select-202609-starwhite_AV2-dbf6ac56-1195-49ac-81f3-55eabf22145d.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240452/pixel-tech/products/iphone-duo-finish-select-202609-starwhite_AV3-599910c3-3c7a-4ef3-bd9a-14e4dc3e3b1a.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240453/pixel-tech/products/iphone-duo-finish-select-202609-starwhite_AV4_GEO_-85ed6898-a0c7-486e-a4e0-eccafb185100.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240454/pixel-tech/products/iphone-duo-finish-select-202609-nightsky-78efc62a-d958-479d-9c04-dcb30dba60e6.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240454/pixel-tech/products/iphone-duo-finish-select-202609-nightsky_AV2-695dfe65-9705-4322-8873-64c3f3ab759f.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240455/pixel-tech/products/iphone-duo-finish-select-202609-nightsky_AV3-668fd0e7-8ade-43bc-bf34-68a38b1d1ce4.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793240456/pixel-tech/products/iphone-duo-finish-select-202609-nightsky_AV4_GEO_S-779dc215-a70c-4bdb-8d37-cd078c00d00f.jpg'
+    ],
+    stock: 8,
+    maxStock: 12,
+    availabilityZone: 'Downtown Yangon',
+    featuresRestrictions: ['5G', 'OLED', 'Foldable', 'USB-C'],
+    isSubscriptionAvailable: true,
+    rating: 4.9,
+    unit: '1 unit'
   }
 ];
 
