@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
-  Bell, ShoppingCart, Moon, Sun, MapPin, Home, Truck,
-  Mic, FileText, LogIn, Monitor, Cpu, ArrowDown
+  Bell, ShoppingCart, Moon, Sun, MapPin, Home,
+  FileText, LogIn, Monitor, Cpu, ArrowDown, LayoutGrid, UserRound
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -156,6 +156,8 @@ export default function Storefront() {
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [celebratingOrder, setCelebratingOrder] = useState<Order | null>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
+  /** Mobile bottom tab — mirrors iOS: Home · Products · Cart · Profile */
+  const [mobileTab, setMobileTab] = useState<'home' | 'products' | 'cart' | 'profile'>('home');
 
   // Core Data States
   const [products, setProducts] = useState<GroceryItem[]>(INITIAL_GROCERIES);
@@ -299,6 +301,50 @@ export default function Storefront() {
   const openAccount = () => {
     if (isSignedIn) setIsProfileOpen(true);
     else setIsAuthOpen(true);
+  };
+
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const goMobileHome = () => {
+    setMobileTab('home');
+    setIsCartOpen(false);
+    setIsProfileOpen(false);
+    setIsNotificationOpen(false);
+    setActiveTrackingOrder(null);
+    setIsVoiceModalOpen(false);
+    setIsOrderDetailsOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goMobileProducts = () => {
+    setMobileTab('products');
+    setIsCartOpen(false);
+    setIsProfileOpen(false);
+    setIsNotificationOpen(false);
+    setActiveTrackingOrder(null);
+    setIsVoiceModalOpen(false);
+    setIsOrderDetailsOpen(false);
+    document
+      .getElementById('catalog-section')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const goMobileCart = () => {
+    setMobileTab('cart');
+    setIsProfileOpen(false);
+    setIsNotificationOpen(false);
+    setIsCartOpen(true);
+  };
+
+  const goMobileProfile = () => {
+    setMobileTab('profile');
+    setIsCartOpen(false);
+    setIsNotificationOpen(false);
+    if (isSignedIn) {
+      setIsProfileOpen(true);
+    } else {
+      openAccount();
+    }
   };
 
   const handleSignOut = () => {
@@ -610,7 +656,7 @@ export default function Storefront() {
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
-<div className="min-h-screen pb-20 sm:pb-8 text-[#0f172a] dark:text-[#e7eef5] transition-colors duration-300">
+<div className="min-h-screen pb-28 sm:pb-8 text-[#0f172a] dark:text-[#e7eef5] transition-colors duration-300">
       {/* HEADER NAVBAR */}
       <header className="sticky top-0 z-40 bg-[#eef4f8]/85 dark:bg-[#0B1220]/90 backdrop-blur-md border-b border-[#0284c7]/12 dark:border-white/8 transition-colors">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2 sm:gap-4">
@@ -683,15 +729,15 @@ export default function Storefront() {
 
             <button
               id="cart-toggle-btn"
-              onClick={() => setIsCartOpen(true)}
+              onClick={goMobileCart}
               className="p-2 sm:px-3.5 sm:py-2 bg-[#0284c7] text-white font-semibold rounded-2xl hover:bg-[#0ea5e9] transition-colors relative flex items-center gap-1.5 cursor-pointer shadow-market"
               aria-label="View shopping cart"
             >
               <ShoppingCart className="w-4.5 h-4.5" />
               <span className="hidden sm:inline text-xs font-semibold tracking-wide">Cart</span>
-              {cart.length > 0 && (
+              {cartCount > 0 && (
                 <span className="bg-white text-[#0284c7] text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                  {cartCount}
                 </span>
               )}
             </button>
@@ -785,7 +831,7 @@ export default function Storefront() {
         </section>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 pt-8 pb-20">
+      <main className="max-w-7xl mx-auto px-4 pt-8 pb-28 sm:pb-20">
         <QuickReorder
           products={products}
           purchaseCounts={purchaseCounts}
@@ -845,7 +891,10 @@ export default function Storefront() {
 
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={() => {
+          setIsAuthOpen(false);
+          setMobileTab((tab) => (tab === 'profile' ? 'home' : tab));
+        }}
         onAddToast={handleAddToast}
         onAuthenticated={(user, displayName) => {
           setIsSignedIn(true);
@@ -867,7 +916,10 @@ export default function Storefront() {
         profile={profile}
         orders={orders}
         isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
+        onClose={() => {
+          setIsProfileOpen(false);
+          setMobileTab((tab) => (tab === 'profile' ? 'home' : tab));
+        }}
         onUpdateProfile={(updater) => {
           if (typeof updater === 'function') {
             setProfile(updater);
@@ -903,7 +955,10 @@ export default function Storefront() {
             onUpdateProfile={setProfile}
             onAddOrder={handleAddOrder}
             onAddToast={handleAddToast}
-            onClose={() => setIsCartOpen(false)}
+            onClose={() => {
+              setIsCartOpen(false);
+              setMobileTab((tab) => (tab === 'cart' ? 'products' : tab));
+            }}
           />
         )}
       </AnimatePresence>
@@ -962,161 +1017,52 @@ export default function Storefront() {
         orders={orders}
         products={products}
         onAddToCart={handleAddToCart}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={goMobileCart}
         onAddToast={handleAddToast}
       />
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#eef4f8]/95 dark:bg-[#0B1220]/95 backdrop-blur-md border-t border-[#0284c7]/12 dark:border-white/10 sm:hidden flex justify-around items-center py-1.5 px-1">
-        <button
-          onClick={() => {
-            setIsProfileOpen(false);
-            setIsCartOpen(false);
-            setIsNotificationOpen(false);
-            setActiveTrackingOrder(null);
-            setIsVoiceModalOpen(false);
-            setIsOrderDetailsOpen(false);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-colors min-w-12 min-h-11 ${
-            !isCartOpen && !isProfileOpen && !isNotificationOpen && !activeTrackingOrder && !isVoiceModalOpen && !isOrderDetailsOpen
-              ? 'text-sky-500 dark:text-sky-400 font-extrabold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-sky-500'
-          }`}
-        >
-          <Home className="w-5 h-5" />
-          <span className="text-[9px] font-bold mt-0.5">Catalog</span>
-        </button>
-
-        <button
-          onClick={() => setIsVoiceModalOpen(true)}
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-colors min-w-12 min-h-11 ${
-            isVoiceModalOpen
-              ? 'text-sky-500 dark:text-sky-400 font-extrabold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-sky-500'
-          }`}
-        >
-          <div className="relative">
-            <Mic className="w-5 h-5" />
-            {isVoiceModalOpen && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full animate-ping" />
-            )}
-          </div>
-          <span className="text-[9px] font-bold mt-0.5">Voice Order</span>
-        </button>
-
-        <button
-          onClick={() => setIsOrderDetailsOpen(true)}
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-colors min-w-12 min-h-11 ${
-            isOrderDetailsOpen
-              ? 'text-sky-500 dark:text-sky-400 font-extrabold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-sky-500'
-          }`}
-        >
-          <FileText className="w-5 h-5" />
-          <span className="text-[9px] font-bold mt-0.5">Reorder</span>
-        </button>
-
-        <button
-          onClick={() => {
-            if (orders.length > 0) {
-              setActiveTrackingOrder(orders[0]);
-            } else {
-              const demoAddress = profile.addresses[0] ?? {
-                id: 'addr_demo',
-                name: profile.name || 'Guest',
-                addressLine: 'Yankin Tower A (Yankin)',
-                city: 'Yangon',
-                state: 'Yangon Region',
-                zipCode: '11201',
-                phone: '09000000000',
-                isDefault: true
-              };
-              const demoPayment = profile.paymentMethods[0] ?? {
-                id: 'pay_demo',
-                type: 'mmqr' as const,
-                accountName: profile.name || 'Guest',
-                accountNumber: 'MMQR-DEMO',
-                isDefault: true
-              };
-              const demoItems = [
-                { item: INITIAL_GROCERIES[0], quantity: 2, isSubscription: false },
-                { item: INITIAL_GROCERIES[1], quantity: 1, isSubscription: false },
-              ];
-              const demoOrder: Order = {
-                id: `ORD_${Date.now().toString().slice(-6)}`,
-                items: demoItems,
-                totalAmount: demoItems.reduce((sum, line) => sum + line.item.price * line.quantity, 0),
-                currency: 'MMK',
-                deliveryAddress: demoAddress,
-                paymentMethod: demoPayment,
-                status: 'out_for_delivery',
-                createdAt: new Date().toISOString(),
-                deliveryLat: 16.8123,
-                deliveryLng: 96.1543,
-                step: 2,
-                estimatedDeliveryWindow: '18 mins'
-              };
-              setOrders([demoOrder]);
-              setActiveTrackingOrder(demoOrder);
-              handleAddToast('Live Delivery Tracking', 'Tracking active dispatch rider in Yangon Zone.', 'info');
-            }
-          }}
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-colors relative min-w-12 min-h-11 ${
-            activeTrackingOrder
-              ? 'text-sky-500 dark:text-sky-400 font-extrabold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-sky-500'
-          }`}
-        >
-          <div className="relative">
-            <Truck className="w-5 h-5" />
-            {activeTrackingOrder && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full border border-white dark:border-slate-900 animate-pulse" />
-            )}
-          </div>
-          <span className="text-[9px] font-bold mt-0.5">Track</span>
-        </button>
-
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-colors relative min-w-12 min-h-11 ${
-            isCartOpen
-              ? 'text-sky-500 dark:text-sky-400 font-extrabold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-sky-500'
-          }`}
-        >
-          <div className="relative">
-            <ShoppingCart className="w-5 h-5" />
-            {cart.length > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-sky-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">
-                {cart.reduce((sum, item) => sum + item.quantity, 0)}
-              </span>
-            )}
-          </div>
-          <span className="text-[9px] font-bold mt-0.5">Cart</span>
-        </button>
-
-        {isSignedIn ? (
-          <ProfileMenu
-            variant="mobile"
-            name={profile.name}
-            avatarUrl={profile.avatarUrl}
-            active={isProfileOpen}
-            onOpenProfile={() => setIsProfileOpen(true)}
-            onSignOut={handleSignOut}
-          />
-        ) : (
-          <button
-            onClick={openAccount}
-            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-colors min-w-12 min-h-11 ${
-              isAuthOpen
-                ? 'text-sky-500 dark:text-sky-400 font-extrabold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-sky-500'
-            }`}
-          >
-            <LogIn className="w-5 h-5" />
-            <span className="text-[9px] font-bold mt-0.5">Sign in</span>
-          </button>
-        )}
+      <nav
+        className="sm:hidden fixed bottom-3 inset-x-3 z-40 pb-[env(safe-area-inset-bottom)]"
+        aria-label="Primary"
+      >
+        <div className="mx-auto flex max-w-md items-stretch justify-between gap-1 rounded-[1.75rem] border border-black/5 bg-white/92 px-1.5 py-1.5 shadow-[0_10px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-[#121a24]/94 dark:shadow-[0_10px_40px_rgba(0,0,0,0.45)]">
+          {(
+            [
+              { id: 'home' as const, label: 'Home', icon: Home, onClick: goMobileHome },
+              { id: 'products' as const, label: 'Products', icon: LayoutGrid, onClick: goMobileProducts },
+              { id: 'cart' as const, label: 'Cart', icon: ShoppingCart, onClick: goMobileCart },
+              { id: 'profile' as const, label: 'Profile', icon: UserRound, onClick: goMobileProfile },
+            ]
+          ).map((tab) => {
+            const active = mobileTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={tab.onClick}
+                aria-current={active ? 'page' : undefined}
+                className={`relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition-colors cursor-pointer ${
+                  active
+                    ? 'bg-[#e8f0f6] text-[#0284c7] dark:bg-sky-500/15 dark:text-sky-300'
+                    : 'text-[#64748b] hover:text-[#0284c7] dark:text-[#8a9eb0] dark:hover:text-sky-300'
+                }`}
+              >
+                <span className="relative">
+                  <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 2} />
+                  {tab.id === 'cart' && cartCount > 0 && (
+                    <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-[#0284c7] px-1 text-center text-[9px] font-bold leading-4 text-white">
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </span>
+                  )}
+                </span>
+                <span className={`text-[10px] leading-none ${active ? 'font-bold' : 'font-semibold'}`}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
     </div>
     </>

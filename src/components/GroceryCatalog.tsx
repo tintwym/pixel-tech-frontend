@@ -517,7 +517,7 @@ export default function GroceryCatalog({
                     </AnimatePresence>
 
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center rounded-xl border border-[#0284c7]/12 dark:border-white/10 overflow-hidden h-10 bg-[#eef4f8]/70 dark:bg-[#0B1220]">
+                      <div className="flex flex-1 items-center rounded-xl border border-[#0284c7]/12 dark:border-white/10 overflow-hidden h-10 bg-[#eef4f8]/70 dark:bg-[#0B1220]">
                         <button
                           type="button"
                           onClick={() =>
@@ -531,7 +531,7 @@ export default function GroceryCatalog({
                         >
                           −
                         </button>
-                        <span className="w-7 text-center text-xs font-semibold tabular-nums">{qty}</span>
+                        <span className="flex-1 text-center text-xs font-semibold tabular-nums">{qty}</span>
                         <button
                           type="button"
                           onClick={() =>
@@ -553,14 +553,15 @@ export default function GroceryCatalog({
                         disabled={out}
                         onClick={() => handleAddToCartClick(item)}
                         whileTap={out ? undefined : { scale: 0.97 }}
-                        className={`flex-1 h-10 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                        aria-label={out ? 'Sold out' : `Add ${item.name} to cart`}
+                        title={out ? 'Sold out' : 'Add to cart'}
+                        className={`shrink-0 h-10 w-10 rounded-xl inline-flex items-center justify-center transition-colors cursor-pointer ${
                           out
                             ? 'bg-[#e8f0f6] dark:bg-[#1a242f] text-[#64748b]/50 cursor-not-allowed'
                             : 'bg-[#0284c7] hover:bg-[#0ea5e9] text-white'
                         }`}
                       >
-                        <ShoppingCart className="w-4 h-4" />
-                        Add
+                        <ShoppingCart className="w-4 h-4" aria-hidden />
                       </motion.button>
                     </div>
                   </div>
