@@ -52,7 +52,7 @@ export function tabletStorageOptions(productName: string): readonly string[] {
   const n = productName.toLowerCase();
   if (/ipad\s*pro/.test(n)) return TABLET_STORAGE_OPTIONS;
   if (/ipad\s*air/.test(n)) return IPAD_AIR_STORAGE;
-  if (/\bipad\b/.test(n)) return IPAD_BASE_STORAGE;
+  if (/ipad\s*mini/.test(n) || /\bipad\b/.test(n)) return IPAD_BASE_STORAGE;
   return TABLET_STORAGE_OPTIONS;
 }
 

@@ -43,6 +43,7 @@ export function inferCatalogPriority(name: string): number {
     if (/\bpro\b/.test(n)) score = Math.max(score, 5200);
     else if (/\bair\b/.test(n)) score = Math.max(score, 5100);
     else if (/\b11th\b|\b11\s*th\b/.test(n) || n.trim() === 'ipad') score = Math.max(score, 5050);
+    else if (/\bmini\b/.test(n)) score = Math.max(score, 5020);
     const chip = n.match(/\bm(\d+)/);
     const gen = chip ? Number(chip[1]) : 1;
     score = Math.max(score, 5000 + gen * 20 + (n.includes('pro') ? 2 : 1));
