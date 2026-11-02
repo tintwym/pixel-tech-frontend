@@ -36,6 +36,7 @@ const COLOR_SWATCHES: Record<string, string> = {
   pink: '#f9a8d4',
   purple: '#8b5cf6',
   green: '#22c55e',
+  orange: '#F97316',
   red: '#ef4444',
   yellow: '#eab308',
 };
@@ -66,6 +67,9 @@ const NON_COLOR_TOKENS = new Set([
   'air',
   'pro',
   'proled',
+  'imac',
+  'mini',
+  'chip',
 ]);
 
 function titleCaseColor(id: string): string {
@@ -174,8 +178,11 @@ export function filterUrlsBySize(
     return file.includes(inchToken);
   });
 
-  // If no assets for this size (e.g. 15" without photos), fall back to heroes.
+  // No finish pack for this size (e.g. Air 15") — keep size-select + unselect.
   if (!filtered.some((u) => extractColorIdFromUrl(u))) {
+    if (filtered.some((u) => filenameFromUrl(u).toLowerCase().includes('size-select'))) {
+      return filtered;
+    }
     const heroes = urls.filter((u) => {
       const f = filenameFromUrl(u).toLowerCase();
       return f.includes('unselect') || !/\d+(?:-\d+)?inch/.test(f);
@@ -239,8 +246,20 @@ export function defaultColorId(
   return colors[0].id;
 }
 
-/** Apple-style hero set: unselect / size shots until the shopper picks a finish. */
-export function defaultHeroGallery(urls: string[], fallback: string): string[] {
+/** Apple-style hero set: size-select when a size is chosen, else unselect gallery. */
+export function defaultHeroGallery(
+  urls: string[],
+  fallback: string,
+  selectedSize?: string | null
+): string[] {
+  if (selectedSize) {
+    const sizeShots = urls.filter((url) => {
+      const file = filenameFromUrl(url).toLowerCase();
+      return file.includes('size-select');
+    });
+    if (sizeShots.length) return sizeShots;
+  }
+
   const heroes = urls.filter((url) => {
     const file = filenameFromUrl(url).toLowerCase();
     return file.includes('unselect');
@@ -265,33 +284,33 @@ export function resolveProductGallery(
   // Swatches from the full set so missing size assets still show finish choices.
   const colors = buildColorOptions(all);
   const sized = filterUrlsBySize(all, selectedSize);
+  const pool = sized.length ? sized : all;
+  const hero = () => defaultHeroGallery(pool, imageUrl, selectedSize);
 
   // Nothing chosen yet → keep the product default gallery (not a finish).
   if (!selectedColorId) {
-    return {
-      colors,
-      gallery: defaultHeroGallery(sized.length ? sized : all, imageUrl),
-    };
+    return { colors, gallery: hero() };
   }
 
   if (colors.length === 0) {
-    return { colors, gallery: sized.length ? sized : all };
+    return { colors, gallery: pool };
   }
 
   const active = colors.find((c) => c.id === selectedColorId);
   if (!active) {
-    return {
-      colors,
-      gallery: defaultHeroGallery(sized.length ? sized : all, imageUrl),
-    };
+    return { colors, gallery: hero() };
   }
 
   const sizedColorUrls = sized.filter((u) => extractColorIdFromUrl(u) === active.id);
-  const gallery = sizedColorUrls.length
-    ? sizedColorUrls
-    : active.imageUrls.length
-      ? active.imageUrls
-      : defaultHeroGallery(sized.length ? sized : all, imageUrl);
+  if (sizedColorUrls.length) {
+    return { colors, gallery: sizedColorUrls };
+  }
 
+  // Size picked but no finish pack for it → show that size's size-select shots.
+  if (selectedSize) {
+    return { colors, gallery: hero() };
+  }
+
+  const gallery = active.imageUrls.length ? active.imageUrls : hero();
   return { colors, gallery };
 }

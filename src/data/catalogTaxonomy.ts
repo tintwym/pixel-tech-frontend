@@ -31,7 +31,7 @@ export type ProductBrand = (typeof PRODUCT_BRANDS)[number];
 
 export function inferBrandFromName(name: string): string {
   const n = name.toLowerCase();
-  if (n.includes('iphone') || n.includes('ipad') || n.includes('macbook') || n.includes('airpods') || n.includes('apple watch')) {
+  if (n.includes('iphone') || n.includes('ipad') || n.includes('macbook') || n.includes('imac') || n.includes('mac mini') || n.includes('mac studio') || n.includes('airpods') || n.includes('apple watch')) {
     return 'Apple';
   }
   if (n.includes('galaxy') || n.includes('samsung')) return 'Samsung';
