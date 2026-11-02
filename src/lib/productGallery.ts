@@ -305,22 +305,17 @@ export function resolveProductGallery(
 
   const sizedColorUrls = sized.filter((u) => extractColorIdFromUrl(u) === active.id);
 
-  // Size chosen → only that size's finish shots (never mix 11"/13").
+  // Apple buy flow: Model/size first → then Finish. Size chosen → that size's finish pack only.
   if (selectedSize) {
     if (sizedColorUrls.length) return { colors, gallery: sizedColorUrls };
     return { colors, gallery: hero() };
   }
 
-  // Finish chosen before size: if finishes are size-specific, preview the
-  // smallest available size pack instead of mixing every size together.
+  // Finish before size is not an Apple step when finishes are size-coded —
+  // keep the model/unselect hero until the shopper picks a size.
   const sizeSpecific = active.imageUrls.filter((u) => extractSizeIdFromUrl(u));
   if (sizeSpecific.length) {
-    const sizeIds = Array.from(
-      new Set(sizeSpecific.map((u) => extractSizeIdFromUrl(u)).filter((s): s is string => Boolean(s)))
-    ).sort((a, b) => parseFloat(a) - parseFloat(b));
-    const preferred = sizeIds[0];
-    const preview = sizeSpecific.filter((u) => extractSizeIdFromUrl(u) === preferred);
-    if (preview.length) return { colors, gallery: preview };
+    return { colors, gallery: hero() };
   }
 
   const gallery = active.imageUrls.length ? active.imageUrls : hero();

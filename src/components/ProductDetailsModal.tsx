@@ -116,6 +116,11 @@ export default function ProductDetailsModal({
     setActiveIndex(0);
   }, [selectedColorId, selectedSize]);
 
+  // Apple buy flow: changing model/size clears finish (finish is size-specific).
+  useEffect(() => {
+    setSelectedColorId(null);
+  }, [selectedSize]);
+
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -148,12 +153,18 @@ export default function ProductDetailsModal({
       onAddToast('Insufficient Stock', `Only ${item.stock} items left in inventory.`, 'warning');
       return;
     }
-    if (colors.length > 0 && !selectedColorId) {
-      onAddToast('Choose a color', 'Select a finish before adding to cart.', 'warning');
+    if ((isLaptop || isConfigurableTablet) && sizeOptions.length > 0 && !selectedSize) {
+      onAddToast('Choose a size', 'Select a model size before adding to cart.', 'warning');
       return;
     }
-    if ((isLaptop || isConfigurableTablet) && sizeOptions.length > 0 && !selectedSize) {
-      onAddToast('Choose a size', 'Select a screen size before adding to cart.', 'warning');
+    if (colors.length > 0 && !selectedColorId) {
+      onAddToast(
+        isLaptop || isConfigurableTablet ? 'Choose a finish' : 'Choose a color',
+        isLaptop || isConfigurableTablet
+          ? 'Select a finish before adding to cart.'
+          : 'Select a color before adding to cart.',
+        'warning'
+      );
       return;
     }
     if (isLaptop && !selectedMemory) {
@@ -341,45 +352,13 @@ export default function ProductDetailsModal({
                   )}
                 </div>
 
-                {colors.length > 0 && (
-                  <div>
-                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
-                      Color
-                      <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                        {activeColor?.label || 'Select'}
-                      </span>
-                    </h3>
-                    <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Choose color">
-                      {colors.map((color) => {
-                        const selected = selectedColorId === color.id;
-                        return (
-                          <button
-                            key={color.id}
-                            type="button"
-                            role="radio"
-                            aria-checked={selected}
-                            aria-label={color.label}
-                            title={color.label}
-                            onClick={() => setSelectedColorId(color.id)}
-                            className={`relative h-9 w-9 rounded-full border-2 transition-shadow cursor-pointer ${
-                              selected
-                                ? 'border-[#0284c7] shadow-[0_0_0_2px_rgba(2,132,199,0.25)]'
-                                : 'border-slate-200 dark:border-white/20 hover:border-[#0284c7]/50'
-                            }`}
-                            style={{ backgroundColor: color.swatch }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
+                {/* Apple buy order: Model/size → Finish → Memory → Storage */}
                 {(isLaptop || isConfigurableTablet) && sizeOptions.length > 0 && (
                   <div>
                     <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
-                      Size
+                      Model
                       <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                        {selectedSize || 'Select'}
+                        {selectedSize || 'Choose your size'}
                       </span>
                     </h3>
                     <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Choose size">
@@ -400,6 +379,53 @@ export default function ProductDetailsModal({
                           >
                             {size}
                           </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {colors.length > 0 && (
+                  <div
+                    className={
+                      sizeOptions.length > 0 && !selectedSize
+                        ? 'opacity-45 pointer-events-none'
+                        : undefined
+                    }
+                    aria-disabled={sizeOptions.length > 0 && !selectedSize ? true : undefined}
+                  >
+                    <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
+                      {isLaptop || isConfigurableTablet ? 'Finish' : 'Color'}
+                      <span className="ml-2 normal-case tracking-normal font-medium text-[#0f172a] dark:text-[#e7eef5]">
+                        {sizeOptions.length > 0 && !selectedSize
+                          ? 'Select a size first'
+                          : activeColor?.label || 'Pick your favorite'}
+                      </span>
+                    </h3>
+                    <div
+                      className="flex flex-wrap gap-2.5"
+                      role="radiogroup"
+                      aria-label={isLaptop || isConfigurableTablet ? 'Choose finish' : 'Choose color'}
+                    >
+                      {colors.map((color) => {
+                        const selected = selectedColorId === color.id;
+                        return (
+                          <button
+                            key={color.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            aria-label={color.label}
+                            title={color.label}
+                            disabled={sizeOptions.length > 0 && !selectedSize}
+                            onClick={() => setSelectedColorId(color.id)}
+                            className={`relative h-9 w-9 rounded-full border-2 transition-shadow cursor-pointer disabled:cursor-not-allowed ${
+                              selected
+                                ? 'border-[#0284c7] shadow-[0_0_0_2px_rgba(2,132,199,0.25)]'
+                                : 'border-slate-200 dark:border-white/20 hover:border-[#0284c7]/50'
+                            }`}
+                            style={{ backgroundColor: color.swatch }}
+                          />
                         );
                       })}
                     </div>
