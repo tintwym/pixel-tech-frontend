@@ -3,8 +3,26 @@
 export const TABLET_STORAGE_OPTIONS = ['256GB', '512GB', '1TB', '2TB'] as const;
 export type TabletStorage = (typeof TABLET_STORAGE_OPTIONS)[number];
 
+const IPAD_BASE_STORAGE = ['128GB', '256GB', '512GB'] as const;
+/** Air catalog base price assumes 256GB (skip 128GB to avoid negative deltas). */
+const IPAD_AIR_STORAGE = ['256GB', '512GB', '1TB'] as const;
+
+/** Absolute upgrade vs a notional 128GB floor; deltas are relative to each SKU’s base tier. */
+const STORAGE_UPGRADE_MMK: Record<string, number> = {
+  '128GB': 0,
+  '256GB': 200_000,
+  '512GB': 600_000,
+  '1TB': 1_400_000,
+  '2TB': 2_200_000,
+};
+
 export function isTabletCategory(category: string | undefined): boolean {
   return (category || '').toLowerCase() === 'tablets';
+}
+
+/** Apple iPads (incl. single-size base iPad) use finish + storage configurators. */
+export function isConfigurableIpad(productName: string): boolean {
+  return /\bipad\b/i.test(productName);
 }
 
 /** Screen sizes offered for a tablet SKU (from name + image cues). */
@@ -30,6 +48,14 @@ export function tabletSizeOptions(
   return [];
 }
 
+export function tabletStorageOptions(productName: string): readonly string[] {
+  const n = productName.toLowerCase();
+  if (/ipad\s*pro/.test(n)) return TABLET_STORAGE_OPTIONS;
+  if (/ipad\s*air/.test(n)) return IPAD_AIR_STORAGE;
+  if (/\bipad\b/.test(n)) return IPAD_BASE_STORAGE;
+  return TABLET_STORAGE_OPTIONS;
+}
+
 export function defaultTabletSize(productName: string, sizes: string[]): string | null {
   if (!sizes.length) return null;
   const m = productName.match(/(\d+)\s*["”]/);
@@ -40,32 +66,27 @@ export function defaultTabletSize(productName: string, sizes: string[]): string 
   return sizes[0];
 }
 
-export function defaultTabletStorage(): TabletStorage {
-  return '256GB';
+export function defaultTabletStorage(productName = ''): string {
+  return tabletStorageOptions(productName)[0] || '256GB';
 }
 
-/** Catalog base price assumed for: 11" · 256GB. */
+/** Catalog base price assumed for: smallest size · that SKU’s base storage. */
 export function tabletConfigPrice(
   basePrice: number,
   size: string | null,
-  storage: string
+  storage: string,
+  productName = ''
 ): number {
   let price = basePrice;
   const inches = size ? parseInt(size, 10) : NaN;
   if (!Number.isNaN(inches) && inches >= 13) price += 700_000;
-  switch (storage) {
-    case '512GB':
-      price += 400_000;
-      break;
-    case '1TB':
-      price += 1_200_000;
-      break;
-    case '2TB':
-      price += 2_000_000;
-      break;
-    default:
-      break;
-  }
+
+  const options = tabletStorageOptions(productName);
+  const baseStorage = options[0];
+  const baseUpgrade = STORAGE_UPGRADE_MMK[baseStorage] ?? 0;
+  const selectedUpgrade = STORAGE_UPGRADE_MMK[storage] ?? 0;
+  price += Math.max(0, selectedUpgrade - baseUpgrade);
+
   return Math.max(0, price);
 }
 

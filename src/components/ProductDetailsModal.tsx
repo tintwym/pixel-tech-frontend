@@ -20,6 +20,14 @@ import {
   laptopSizeOptions,
   type LaptopMemory,
 } from '@/data/laptopOptions';
+import {
+  formatTabletConfig,
+  isConfigurableIpad,
+  isTabletCategory,
+  tabletConfigPrice,
+  tabletSizeOptions,
+  tabletStorageOptions,
+} from '@/data/tabletOptions';
 
 interface ProductDetailsModalProps {
   item: GroceryItem | null;
@@ -52,9 +60,19 @@ export default function ProductDetailsModal({
 
   const isPhone = isSmartphoneCategory(item?.category);
   const isLaptop = isLaptopCategory(item?.category);
-  const sizeOptions = useMemo(
-    () => (item && isLaptop ? laptopSizeOptions(item.name, item.imageUrls || []) : []),
-    [item, isLaptop]
+  const isTablet = isTabletCategory(item?.category);
+  const sizeOptions = useMemo(() => {
+    if (!item) return [] as string[];
+    if (isLaptop) return laptopSizeOptions(item.name, item.imageUrls || []);
+    if (isTablet) return tabletSizeOptions(item.name, item.imageUrls || []);
+    return [];
+  }, [item, isLaptop, isTablet]);
+  /** Configurable tablets: Apple iPads (size + storage) — fixed SKUs like Tab S9 do not. */
+  const isConfigurableTablet =
+    isTablet && !!item && (sizeOptions.length > 0 || isConfigurableIpad(item.name));
+  const tabletStorage = useMemo(
+    () => (item ? tabletStorageOptions(item.name) : []),
+    [item]
   );
 
   const { colors, gallery } = useMemo(() => {
@@ -63,9 +81,9 @@ export default function ProductDetailsModal({
       item.imageUrl,
       item.imageUrls,
       selectedColorId,
-      isLaptop ? selectedSize : null
+      isLaptop || (isConfigurableTablet && sizeOptions.length > 0) ? selectedSize : null
     );
-  }, [item, selectedColorId, selectedSize, isLaptop]);
+  }, [item, selectedColorId, selectedSize, isLaptop, isConfigurableTablet, sizeOptions.length]);
 
   const activeColor = colors.find((c) => c.id === selectedColorId) || null;
   const displayPrice = item
@@ -73,7 +91,14 @@ export default function ProductDetailsModal({
       ? mobileStoragePrice(item.price, selectedStorage)
       : isLaptop && selectedStorage && selectedMemory
         ? laptopConfigPrice(item.price, selectedSize, selectedMemory, selectedStorage)
-        : item.price
+        : isConfigurableTablet && (selectedSize || selectedStorage)
+          ? tabletConfigPrice(
+              item.price,
+              selectedSize,
+              selectedStorage || tabletStorage[0] || '256GB',
+              item.name
+            )
+          : item.price
     : 0;
 
   useEffect(() => {
@@ -127,7 +152,7 @@ export default function ProductDetailsModal({
       onAddToast('Choose a color', 'Select a finish before adding to cart.', 'warning');
       return;
     }
-    if (isLaptop && sizeOptions.length > 0 && !selectedSize) {
+    if ((isLaptop || isConfigurableTablet) && sizeOptions.length > 0 && !selectedSize) {
       onAddToast('Choose a size', 'Select a screen size before adding to cart.', 'warning');
       return;
     }
@@ -135,7 +160,7 @@ export default function ProductDetailsModal({
       onAddToast('Choose memory', 'Select memory before adding to cart.', 'warning');
       return;
     }
-    if ((isPhone || isLaptop) && !selectedStorage) {
+    if ((isPhone || isLaptop || isConfigurableTablet) && !selectedStorage) {
       onAddToast('Choose storage', 'Select storage before adding to cart.', 'warning');
       return;
     }
@@ -146,9 +171,11 @@ export default function ProductDetailsModal({
     };
     const configLabel = isLaptop
       ? formatLaptopConfig(selectedSize, selectedMemory || '', selectedStorage || '')
-      : isPhone
-        ? selectedStorage || undefined
-        : undefined;
+      : isConfigurableTablet
+        ? formatTabletConfig(selectedSize, selectedStorage || '')
+        : isPhone
+          ? selectedStorage || undefined
+          : undefined;
     const added = onAddToCart(
       pricedItem,
       qty,
@@ -347,7 +374,7 @@ export default function ProductDetailsModal({
                   </div>
                 )}
 
-                {isLaptop && sizeOptions.length > 0 && (
+                {(isLaptop || isConfigurableTablet) && sizeOptions.length > 0 && (
                   <div>
                     <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
                       Size
@@ -411,7 +438,7 @@ export default function ProductDetailsModal({
                   </div>
                 )}
 
-                {(isPhone || isLaptop) && (
+                {(isPhone || isLaptop || isConfigurableTablet) && (
                   <div>
                     <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[#64748b] mb-2">
                       Storage
@@ -420,7 +447,12 @@ export default function ProductDetailsModal({
                       </span>
                     </h3>
                     <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Choose storage">
-                      {(isLaptop ? LAPTOP_STORAGE_OPTIONS : MOBILE_STORAGE_OPTIONS).map(
+                      {(isLaptop
+                        ? LAPTOP_STORAGE_OPTIONS
+                        : isConfigurableTablet
+                          ? tabletStorage
+                          : MOBILE_STORAGE_OPTIONS
+                      ).map(
                         (storage) => {
                           const selected = selectedStorage === storage;
                           return (
