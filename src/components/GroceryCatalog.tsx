@@ -97,6 +97,37 @@ export default function GroceryCatalog({
   const [isOffline, setIsOffline] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Deep link: /?product=… or /product/[id] → open matching product details.
+  useEffect(() => {
+    if (typeof window === 'undefined' || products.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('product');
+    if (!slug) return;
+    const match = products.find(
+      (p) =>
+        p.id === slug ||
+        p.apiId === slug ||
+        p.name.toLowerCase().replace(/\s+/g, '-') === slug.toLowerCase()
+    );
+    if (match) setDetailsItem(match);
+  }, [products]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (detailsItem) {
+      const key = detailsItem.apiId || detailsItem.id;
+      if (url.searchParams.get('product') !== key) {
+        url.searchParams.set('product', key);
+        window.history.replaceState({}, '', `${url.pathname}?${url.searchParams.toString()}`);
+      }
+    } else if (url.searchParams.has('product')) {
+      url.searchParams.delete('product');
+      const qs = url.searchParams.toString();
+      window.history.replaceState({}, '', qs ? `${url.pathname}?${qs}` : url.pathname);
+    }
+  }, [detailsItem]);
+
   useEffect(() => {
     if (!filtersOpen) return;
     const prev = document.body.style.overflow;

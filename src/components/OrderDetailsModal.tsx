@@ -6,12 +6,33 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Order, CartItem, GroceryItem } from '@/types';
 import ProductImage from '@/components/ProductImage';
 
+function lineConfigLabel(cartItem: CartItem): string {
+  return [cartItem.selectedColorLabel, cartItem.selectedStorage].filter(Boolean).join(' · ');
+}
+
+function displayProductName(cartItem: CartItem): string {
+  const cfg = lineConfigLabel(cartItem);
+  let name = cartItem.item.name;
+  // Older orders baked finish·storage into the product name — strip when fields exist.
+  if (cfg && name.endsWith(` · ${cfg}`)) {
+    name = name.slice(0, -(cfg.length + 3)).trim();
+  }
+  return name;
+}
+
 interface OrderDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   orders: Order[];
   products: GroceryItem[];
-  onAddToCart: (item: GroceryItem, qty: number, isSub: boolean, freq?: 'weekly' | 'biweekly' | 'monthly') => void;
+  onAddToCart: (
+    item: GroceryItem,
+    qty: number,
+    isSub: boolean,
+    freq?: 'weekly' | 'biweekly' | 'monthly',
+    selectedColor?: string,
+    selectedStorage?: string
+  ) => boolean | void;
   onOpenCart: () => void;
   onAddToast: (title: string, msg: string, type: 'success' | 'warning' | 'info') => void;
   selectedOrderId?: string | null;
@@ -43,7 +64,18 @@ export default function OrderDetailsModal({
         return;
       }
       const qty = Math.min(cartItem.quantity, live.stock);
-      onAddToCart(live, qty, false);
+      const added = onAddToCart(
+        live,
+        qty,
+        false,
+        undefined,
+        cartItem.selectedColor,
+        cartItem.selectedStorage
+      );
+      if (added === false) {
+        skipped += 1;
+        return;
+      }
       readdedCount += qty;
     });
 
@@ -210,18 +242,26 @@ export default function OrderDetailsModal({
                       Cart Items ({currentOrder.items.length})
                     </span>
                     <div className="border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-white/5">
-                      {currentOrder.items.map((cartItem, idx) => (
+                      {currentOrder.items.map((cartItem, idx) => {
+                        const cfg = lineConfigLabel(cartItem);
+                        const name = displayProductName(cartItem);
+                        return (
                         <div key={idx} className="p-3 sm:p-4 flex items-center justify-between gap-3 bg-white dark:bg-[#121a24]">
                           <div className="flex items-center gap-3 min-w-0">
                             <ProductImage
                               src={cartItem.item.imageUrl}
-                              alt={cartItem.item.name}
+                              alt={name}
                               className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-white/10 shrink-0"
                             />
                             <div className="min-w-0">
                               <h5 className="font-bold text-xs sm:text-sm text-slate-800 dark:text-white truncate">
-                                {cartItem.item.name}
+                                {name}
                               </h5>
+                              {cfg ? (
+                                <p className="text-[11px] text-sky-600 dark:text-sky-400 truncate mt-0.5">
+                                  {cfg}
+                                </p>
+                              ) : null}
                               <p className="text-[11px] text-slate-500 dark:text-slate-400">
                                 {cartItem.item.price.toLocaleString()} MMK / {cartItem.item.unit}
                               </p>
@@ -236,7 +276,8 @@ export default function OrderDetailsModal({
                             </span>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 

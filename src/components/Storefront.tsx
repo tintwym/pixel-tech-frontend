@@ -41,6 +41,10 @@ import {
   persistOrders,
   persistStockLevels,
 } from '@/lib/commerceSync';
+import {
+  ORDER_STATUS_COPY,
+  subscribeOrderStatusEvents,
+} from '@/lib/orderStatusBus';
 
 /** Compact department links — catalog still owns search/filters. */
 const NAV_CATEGORIES: { label: string; category: string }[] = [
@@ -168,7 +172,13 @@ export default function Storefront() {
   const [products, setProducts] = useState<GroceryItem[]>(INITIAL_GROCERIES);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const ordersRef = useRef<Order[]>([]);
+  const updateOrderStatusRef = useRef<(orderId: string, status: OrderStatus, step: number) => void>(() => {});
   const allowPersistStock = useRef(false);
+
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
   const [purchaseCounts, setPurchaseCounts] = useState<Record<string, number>>({
     'p1': 5, // iPhone 16 Pro
     'p2': 4, // iPhone 16
@@ -599,6 +609,11 @@ export default function Storefront() {
     }
 
     setOrders(prev => [order, ...prev]);
+    handleAddNotification(
+      'Order placed',
+      `Order ${order.id} is confirmed. We’ll notify you as packing and delivery progress.`,
+      'order'
+    );
     // Deduct stock levels in local store (sum all cart lines for the same SKU)
     setProducts(prevProducts =>
       prevProducts.map(gItem => {
@@ -657,6 +672,49 @@ export default function Storefront() {
       setShowFeedbackOrder(prev => (prev?.id === orderId ? prev : deliveredTarget!));
     }
   };
+
+  updateOrderStatusRef.current = handleUpdateOrderStatus;
+
+  // Admin dashboard status advances (other tab / same origin) → shopper inbox.
+  useEffect(() => {
+    return subscribeOrderStatusEvents((event) => {
+      const copy = ORDER_STATUS_COPY[event.status];
+      if (!copy) return;
+
+      const short = event.orderId.replace(/-/g, '').slice(0, 8).toUpperCase();
+      const match = ordersRef.current.find((o) => {
+        const local = o.id.replace(/^ORD_/i, '').replace(/-/g, '').toUpperCase();
+        return (
+          o.id === event.orderId ||
+          local.startsWith(short) ||
+          short.startsWith(local.slice(0, 8))
+        );
+      });
+
+      const title = copy.title;
+      const message = copy.message(event.orderId);
+      handleAddNotification(title, message, copy.type);
+      handleAddToast(
+        title,
+        message,
+        copy.type === 'order' ? 'info' : copy.type === 'success' ? 'success' : 'warning'
+      );
+
+      if (!match) return;
+      const nextStatus = event.status as OrderStatus;
+      const stepMap: Partial<Record<OrderStatus, number>> = {
+        pending: 0,
+        processing: 1,
+        out_for_delivery: 2,
+        delivered: 4,
+        cancelled: 0,
+      };
+      const step = stepMap[nextStatus];
+      if (step !== undefined) {
+        updateOrderStatusRef.current(match.id, nextStatus, step);
+      }
+    });
+  }, []);
 
   const handleSubmitFeedback = (orderId: string, rating: number, comment: string) => {
     const feedback = { rating, comment };

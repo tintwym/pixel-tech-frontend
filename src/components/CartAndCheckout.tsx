@@ -19,6 +19,7 @@ import {
   validateManualAddress,
   validateManualPayment,
 } from '@/lib/checkoutValidation';
+import { AppliedPromo, discountForPromo, resolvePromoCode } from '@/lib/promosApi';
 
 interface CartAndCheckoutProps {
   cart: CartItem[];
@@ -88,12 +89,13 @@ export default function CartAndCheckout({
   const [mmqrCopied, setMmqrCopied] = useState(false);
   const [mmqrVerified, setMmqrVerified] = useState(false);
 
-  // Coupon state — store code so FREEDEL tracks live delivery fee
+  // Coupon state — store resolved promo so FREE_SHIPPING tracks live delivery fee
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<'LOYAL2K' | 'FREEDEL' | 'LUXTECH' | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
   const [addressErrors, setAddressErrors] = useState<AddressFieldErrors>({});
   const [paymentErrors, setPaymentErrors] = useState<PaymentFieldErrors>({});
   const [couponError, setCouponError] = useState<string | undefined>();
+  const [couponBusy, setCouponBusy] = useState(false);
 
   // Secure processing animation state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -136,12 +138,10 @@ export default function CartAndCheckout({
 
   const FREE_DELIVERY_THRESHOLD = 500_000; // Keep in sync with hero free-delivery copy
   const deliveryFee = subtotal > FREE_DELIVERY_THRESHOLD ? 0 : 2500;
-  const appliedDiscount = useMemo(() => {
-    if (appliedCoupon === 'LOYAL2K') return 2000;
-    if (appliedCoupon === 'FREEDEL') return deliveryFee; // only waives current delivery fee
-    if (appliedCoupon === 'LUXTECH') return 10000;
-    return 0;
-  }, [appliedCoupon, deliveryFee]);
+  const appliedDiscount = useMemo(
+    () => discountForPromo(appliedPromo, subtotal, deliveryFee),
+    [appliedPromo, subtotal, deliveryFee]
+  );
   const grandTotal = Math.max(0, subtotal + deliveryFee - appliedDiscount);
 
   // Address & Payment Resolver
@@ -270,33 +270,27 @@ export default function CartAndCheckout({
     return `${mmkAmount.toLocaleString()} MMK`;
   };
 
-  const applyCoupon = () => {
+  const applyCoupon = async () => {
     const formatError = validateCouponCode(couponCode);
     if (formatError) {
       setCouponError(formatError);
       onAddToast('Invalid coupon', formatError, 'warning');
       return;
     }
+    setCouponBusy(true);
     setCouponError(undefined);
-    const clean = couponCode.trim().toUpperCase();
-    const unlocked = profile.redeemedCoupons || [];
-    if (!unlocked.includes(clean)) {
-      setCouponError('Redeem this code with loyalty points in your profile first.');
-      onAddToast('Coupon locked', 'Redeem this code with loyalty points in your profile first.', 'warning');
-      return;
-    }
-    if (clean === 'LOYAL2K') {
-      setAppliedCoupon('LOYAL2K');
-      onAddToast('Coupon Applied', '2,000 MMK loyalty discount subtracted.', 'success');
-    } else if (clean === 'FREEDEL') {
-      setAppliedCoupon('FREEDEL');
-      onAddToast('Coupon Applied', 'Delivery charges waived.', 'success');
-    } else if (clean === 'LUXTECH') {
-      setAppliedCoupon('LUXTECH');
-      onAddToast('Coupon Applied', '10,000 MMK tech voucher applied.', 'success');
-    } else {
-      setCouponError('This promotional code is not valid.');
-      onAddToast('Invalid Coupon', 'This promotional code is not valid.', 'warning');
+    try {
+      const result = await resolvePromoCode(couponCode, profile.redeemedCoupons || []);
+      if (result.error || !result.promo) {
+        setCouponError(result.error || 'This promotional code is not valid.');
+        onAddToast('Invalid Coupon', result.error || 'This promotional code is not valid.', 'warning');
+        return;
+      }
+      setAppliedPromo(result.promo);
+      const label = result.promo.label || result.promo.code;
+      onAddToast('Coupon Applied', `${label} applied to this order.`, 'success');
+    } finally {
+      setCouponBusy(false);
     }
   };
 
@@ -448,16 +442,17 @@ export default function CartAndCheckout({
 
       const snapshotItems = cart.map(line => {
         const live = products.find(g => g.id === line.item.id) || line.item;
-        const opts = [line.selectedColorLabel, line.selectedStorage].filter(Boolean).join(' · ');
-        const suffix = opts ? ` · ${opts}` : '';
         return {
           ...line,
           item: {
             ...live,
-            name: `${live.name}${suffix}`,
+            name: live.name,
             price: line.item.price,
             imageUrl: line.item.imageUrl || live.imageUrl,
           },
+          selectedColor: line.selectedColor,
+          selectedColorLabel: line.selectedColorLabel,
+          selectedStorage: line.selectedStorage,
         };
       });
 
@@ -508,9 +503,10 @@ export default function CartAndCheckout({
           updatedPayments.push(savedPay);
         }
 
-        const remainingCoupons = appliedCoupon
-          ? (prev.redeemedCoupons || []).filter(c => c !== appliedCoupon)
-          : (prev.redeemedCoupons || []);
+        const remainingCoupons =
+          appliedPromo?.source === 'loyalty'
+            ? (prev.redeemedCoupons || []).filter((c) => c !== appliedPromo.code)
+            : (prev.redeemedCoupons || []);
 
         return {
           ...prev,
@@ -1408,7 +1404,7 @@ export default function CartAndCheckout({
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Enter loyalty coupon (e.g., LOYAL2K)"
+                  placeholder="Promo or loyalty code (PIXEL10, WELCOME5K…)"
                   value={couponCode}
                   onChange={(e) => {
                     setCouponCode(e.target.value);
@@ -1420,13 +1416,20 @@ export default function CartAndCheckout({
                   }`}
                 />
                 <button
-                  onClick={applyCoupon}
-                  className="px-3 py-1.5 bg-[#0284c7] hover:bg-[#0ea5e9] text-white text-xs font-semibold rounded-lg cursor-pointer"
+                  onClick={() => void applyCoupon()}
+                  disabled={couponBusy}
+                  className="px-3 py-1.5 bg-[#0284c7] hover:bg-[#0ea5e9] text-white text-xs font-semibold rounded-lg cursor-pointer disabled:opacity-60"
                 >
-                  Apply
+                  {couponBusy ? '…' : 'Apply'}
                 </button>
               </div>
               {couponError ? <p className="text-[10px] text-red-500">{couponError}</p> : null}
+              {appliedPromo && !couponError ? (
+                <p className="text-[10px] text-sky-600 dark:text-sky-400">
+                  Applied {appliedPromo.code}
+                  {appliedPromo.label ? ` · ${appliedPromo.label}` : ''}
+                </p>
+              ) : null}
             </div>
           )}
 
@@ -1438,7 +1441,7 @@ export default function CartAndCheckout({
               </div>
               {appliedDiscount > 0 && (
                 <div className="flex justify-between text-sky-600 font-bold">
-                  <span>Loyalty Discount</span>
+                  <span>{appliedPromo?.code || 'Promo'} discount</span>
                   <span className="font-mono">-{formatPrice(appliedDiscount)}</span>
                 </div>
               )}

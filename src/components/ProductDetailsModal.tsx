@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, ShoppingCart, Star, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ShoppingCart, Star, MapPin, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { GroceryItem } from '@/types';
 import ProductImage from '@/components/ProductImage';
@@ -215,6 +215,26 @@ export default function ProductDetailsModal({
     );
   };
 
+  const shareProduct = async () => {
+    if (!item) return;
+    const key = item.apiId || item.id;
+    const url =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/product/${encodeURIComponent(key)}`
+        : `/product/${encodeURIComponent(key)}`;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: item.name, text: item.name, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      onAddToast('Link copied', 'Product link copied — paste to share.', 'success');
+    } catch (err) {
+      if ((err as Error)?.name === 'AbortError') return;
+      onAddToast('Share unavailable', url, 'info');
+    }
+  };
+
   return (
     <AnimatePresence>
       <div
@@ -249,28 +269,48 @@ export default function ProductDetailsModal({
             >
               {item.name}
             </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => void shareProduct()}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+                aria-label="Share product"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="overflow-y-auto flex-1 min-h-0">
             <div className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
               {/* Gallery */}
               <div className="relative bg-[#e8f0f6] dark:bg-[#0a1018]">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="hidden sm:inline-flex absolute top-4 right-4 z-10 p-2 rounded-full bg-white/90 dark:bg-[#121a24]/90 text-slate-500 hover:text-slate-800 dark:hover:text-white shadow-sm cursor-pointer"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="hidden sm:flex absolute top-4 right-4 z-10 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void shareProduct()}
+                    className="inline-flex p-2 rounded-full bg-white/90 dark:bg-[#121a24]/90 text-slate-500 hover:text-slate-800 dark:hover:text-white shadow-sm cursor-pointer"
+                    aria-label="Share product"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="inline-flex p-2 rounded-full bg-white/90 dark:bg-[#121a24]/90 text-slate-500 hover:text-slate-800 dark:hover:text-white shadow-sm cursor-pointer"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
 
                 <div className="relative aspect-[4/3] sm:aspect-square max-h-[46vh] sm:max-h-none">
                   <ProductImage
