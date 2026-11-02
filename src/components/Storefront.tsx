@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin, Home,
   LayoutGrid, UserRound,
-  ChevronRight, Package, Truck, Bell, LogIn,
+  ChevronRight, Package, Truck, Bell,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import HeroCarousel from '@/components/HeroCarousel';
@@ -19,6 +19,7 @@ import CartAndCheckout from '@/components/CartAndCheckout';
 import OrderTracker from '@/components/OrderTracker';
 import UserProfileModal from '@/components/UserProfileModal';
 import AuthModal from '@/components/AuthModal';
+import AuthForm from '@/components/AuthForm';
 import NotificationCenter, { NotificationMsg } from '@/components/NotificationCenter';
 import ToastContainer, { ToastMessage } from '@/components/ToastContainer';
 import QuickReorder from '@/components/QuickReorder';
@@ -1008,43 +1009,33 @@ export default function Storefront() {
                 id="mobile-profile-title"
                 className="font-display text-xl font-semibold text-[#0f172a] dark:text-[#e7eef5]"
               >
-                Profile
+                {isSignedIn ? 'Profile' : 'Account'}
               </h2>
             </header>
 
-            <div className="flex-1 overflow-y-auto px-4 py-6 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))]">
-              {/* Identity */}
-              <div className="flex flex-col items-center text-center mb-8">
-                {isSignedIn ? (
-                  profile.avatarUrl ? (
-                    <img
-                      src={profile.avatarUrl}
-                      alt=""
-                      className="h-20 w-20 rounded-full object-cover ring-2 ring-white dark:ring-white/10 shadow-sm"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e0f2fe] text-2xl font-semibold text-[#0284c7]">
-                      {(profile.name || 'P').charAt(0).toUpperCase()}
-                    </span>
-                  )
-                ) : (
-                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white dark:bg-[#121a24] border border-[#0284c7]/15 dark:border-white/10">
-                    <UserRound className="w-9 h-9 text-[#0284c7]" />
-                  </span>
-                )}
-                <p className="mt-3 font-display text-lg font-semibold text-[#0f172a] dark:text-[#e7eef5]">
-                  {isSignedIn ? profile.name : 'Guest'}
-                </p>
-                <p className="text-sm text-[#64748b] dark:text-[#8a9eb0]">
-                  {isSignedIn ? profile.email : 'Sign in to sync cart & orders'}
-                </p>
-              </div>
+            <div className="flex-1 overflow-y-auto px-4 py-5 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))]">
+              {isSignedIn ? (
+                <>
+                  <div className="flex flex-col items-center text-center mb-8">
+                    {profile.avatarUrl ? (
+                      <img
+                        src={profile.avatarUrl}
+                        alt=""
+                        className="h-20 w-20 rounded-full object-cover ring-2 ring-white dark:ring-white/10 shadow-sm"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e0f2fe] text-2xl font-semibold text-[#0284c7]">
+                        {(profile.name || 'P').charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <p className="mt-3 font-display text-lg font-semibold text-[#0f172a] dark:text-[#e7eef5]">
+                      {profile.name}
+                    </p>
+                    <p className="text-sm text-[#64748b] dark:text-[#8a9eb0]">{profile.email}</p>
+                  </div>
 
-              {/* Grouped links — Appearance lives in Account after sign-in; theme follows system by default */}
-              <div className="overflow-hidden rounded-2xl bg-white dark:bg-[#121a24] border border-[#0284c7]/10 dark:border-white/10">
-                {isSignedIn ? (
-                  <>
+                  <div className="overflow-hidden rounded-2xl bg-white dark:bg-[#121a24] border border-[#0284c7]/10 dark:border-white/10">
                     <button
                       type="button"
                       onClick={() => setIsProfileOpen(true)}
@@ -1080,30 +1071,34 @@ export default function Storefront() {
                       </span>
                       <ChevronRight className="w-4 h-4 text-[#94a3b8]" />
                     </button>
-                  </>
-                ) : (
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => setIsAuthOpen(true)}
-                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-black/[0.03] dark:active:bg-white/5"
+                    onClick={handleSignOut}
+                    className="mt-8 w-full text-center text-sm font-medium text-red-500 dark:text-red-400 cursor-pointer py-2"
                   >
-                    <LogIn className="w-5 h-5 text-[#0284c7] shrink-0" />
-                    <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                      Sign in
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-[#94a3b8]" />
+                    Sign out
                   </button>
-                )}
-              </div>
-
-              {isSignedIn && (
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="mt-8 w-full text-center text-sm font-medium text-red-500 dark:text-red-400 cursor-pointer py-2"
-                >
-                  Sign out
-                </button>
+                </>
+              ) : (
+                <AuthForm
+                  variant="panel"
+                  onAuthenticated={(user, displayName) => {
+                    setIsSignedIn(true);
+                    setProfile((prev) => ({
+                      ...prev,
+                      id: user.id || prev.id || `USR_${Date.now()}`,
+                      name: displayName,
+                      email: user.email || prev.email,
+                      avatarUrl:
+                        prev.avatarUrl ||
+                        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+                    }));
+                  }}
+                  onAddToast={handleAddToast}
+                  onContinueAsGuest={goMobileHome}
+                />
               )}
             </div>
           </motion.div>
