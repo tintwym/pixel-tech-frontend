@@ -27,17 +27,49 @@ function apiUrl(path: string): string {
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
+/** Merchandise discount only (never eats delivery). Cap fixed MMK at subtotal. */
+export function merchandiseDiscount(
+  promo: AppliedPromo | null,
+  subtotal: number
+): number {
+  if (!promo) return 0;
+  if (promo.discountType === 'FREE_SHIPPING') return 0;
+  if (promo.discountType === 'PERCENT') {
+    return Math.min(subtotal, Math.floor((subtotal * promo.amount) / 100));
+  }
+  return Math.min(subtotal, Math.max(0, Math.floor(promo.amount)));
+}
+
+/** Delivery after a FREE_SHIPPING promo (0) or the normal fee. */
+export function deliveryAfterPromo(
+  promo: AppliedPromo | null,
+  deliveryFee: number
+): number {
+  if (promo?.discountType === 'FREE_SHIPPING') return 0;
+  return deliveryFee;
+}
+
+/** @deprecated Prefer merchandiseDiscount + deliveryAfterPromo. */
 export function discountForPromo(
   promo: AppliedPromo | null,
   subtotal: number,
   deliveryFee: number
 ): number {
-  if (!promo) return 0;
-  if (promo.discountType === 'FREE_SHIPPING') return deliveryFee;
-  if (promo.discountType === 'PERCENT') {
-    return Math.floor((subtotal * promo.amount) / 100);
+  return (
+    merchandiseDiscount(promo, subtotal) +
+    (deliveryFee - deliveryAfterPromo(promo, deliveryFee))
+  );
+}
+
+export async function redeemPromoCode(code: string): Promise<void> {
+  try {
+    await fetch(`${apiUrl('/promos/redeem')}?code=${encodeURIComponent(code)}`, {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+    });
+  } catch {
+    /* best-effort; order already placed */
   }
-  return Math.max(0, Math.floor(promo.amount));
 }
 
 const LOYALTY: Record<string, Omit<AppliedPromo, 'source'>> = {

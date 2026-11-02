@@ -45,6 +45,7 @@ import {
   ORDER_STATUS_COPY,
   subscribeOrderStatusEvents,
 } from '@/lib/orderStatusBus';
+import { fetchOrderFulfillmentSnapshots } from '@/lib/orderHistoryApi';
 
 /** Compact department links — catalog still owns search/filters. */
 const NAV_CATEGORIES: { label: string; category: string }[] = [
@@ -675,46 +676,89 @@ export default function Storefront() {
 
   updateOrderStatusRef.current = handleUpdateOrderStatus;
 
-  // Admin dashboard status advances (other tab / same origin) → shopper inbox.
+  const stepForStatus = (status: OrderStatus): number => {
+    const stepMap: Partial<Record<OrderStatus, number>> = {
+      pending: 0,
+      processing: 1,
+      out_for_delivery: 2,
+      delivered: 4,
+      cancelled: 0,
+    };
+    return stepMap[status] ?? 0;
+  };
+
+  const announceOrderStatus = (orderId: string, status: OrderStatus) => {
+    const copy = ORDER_STATUS_COPY[status];
+    if (!copy) return;
+    const title = copy.title;
+    const message = copy.message(orderId);
+    handleAddNotification(title, message, copy.type);
+    handleAddToast(
+      title,
+      message,
+      copy.type === 'order' ? 'info' : copy.type === 'success' ? 'success' : 'warning'
+    );
+  };
+
+  // Same-origin admin status bus (only works when admin+web share an origin).
   useEffect(() => {
     return subscribeOrderStatusEvents((event) => {
-      const copy = ORDER_STATUS_COPY[event.status];
-      if (!copy) return;
+      const nextStatus = event.status as OrderStatus;
+      if (!ORDER_STATUS_COPY[nextStatus]) return;
 
       const short = event.orderId.replace(/-/g, '').slice(0, 8).toUpperCase();
       const match = ordersRef.current.find((o) => {
         const local = o.id.replace(/^ORD_/i, '').replace(/-/g, '').toUpperCase();
-        return (
-          o.id === event.orderId ||
-          local.startsWith(short) ||
-          short.startsWith(local.slice(0, 8))
-        );
+        return o.id === event.orderId || local === short;
       });
-
-      const title = copy.title;
-      const message = copy.message(event.orderId);
-      handleAddNotification(title, message, copy.type);
-      handleAddToast(
-        title,
-        message,
-        copy.type === 'order' ? 'info' : copy.type === 'success' ? 'success' : 'warning'
-      );
-
       if (!match) return;
-      const nextStatus = event.status as OrderStatus;
-      const stepMap: Partial<Record<OrderStatus, number>> = {
-        pending: 0,
-        processing: 1,
-        out_for_delivery: 2,
-        delivered: 4,
-        cancelled: 0,
-      };
-      const step = stepMap[nextStatus];
-      if (step !== undefined) {
-        updateOrderStatusRef.current(match.id, nextStatus, step);
-      }
+      if (match.status === nextStatus) return;
+
+      announceOrderStatus(match.id, nextStatus);
+      updateOrderStatusRef.current(match.id, nextStatus, stepForStatus(nextStatus));
     });
   }, []);
+
+  // Cross-port: poll API order history while signed in (admin advances live on Neon).
+  useEffect(() => {
+    if (!isSignedIn || !getStoredToken()) return;
+    const seen = new Map<string, OrderStatus>();
+    let cancelled = false;
+    let primed = false;
+
+    const poll = async () => {
+      try {
+        const snaps = await fetchOrderFulfillmentSnapshots();
+        if (cancelled) return;
+        for (const snap of snaps) {
+          const prev = seen.get(snap.id);
+          if (!primed) {
+            seen.set(snap.id, snap.fulfillmentStatus);
+            continue;
+          }
+          if (prev && prev !== snap.fulfillmentStatus) {
+            announceOrderStatus(snap.id, snap.fulfillmentStatus);
+            updateOrderStatusRef.current(
+              snap.id,
+              snap.fulfillmentStatus,
+              stepForStatus(snap.fulfillmentStatus)
+            );
+          }
+          seen.set(snap.id, snap.fulfillmentStatus);
+        }
+        primed = true;
+      } catch {
+        /* ignore transient poll errors */
+      }
+    };
+
+    void poll();
+    const id = window.setInterval(poll, 20000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [isSignedIn]);
 
   const handleSubmitFeedback = (orderId: string, rating: number, comment: string) => {
     const feedback = { rating, comment };

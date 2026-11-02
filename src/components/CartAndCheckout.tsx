@@ -19,7 +19,13 @@ import {
   validateManualAddress,
   validateManualPayment,
 } from '@/lib/checkoutValidation';
-import { AppliedPromo, discountForPromo, resolvePromoCode } from '@/lib/promosApi';
+import {
+  AppliedPromo,
+  deliveryAfterPromo,
+  merchandiseDiscount,
+  redeemPromoCode,
+  resolvePromoCode,
+} from '@/lib/promosApi';
 
 interface CartAndCheckoutProps {
   cart: CartItem[];
@@ -137,10 +143,14 @@ export default function CartAndCheckout({
   }, [cart]);
 
   const FREE_DELIVERY_THRESHOLD = 500_000; // Keep in sync with hero free-delivery copy
-  const deliveryFee = subtotal > FREE_DELIVERY_THRESHOLD ? 0 : 2500;
+  const baseDeliveryFee = subtotal > FREE_DELIVERY_THRESHOLD ? 0 : 2500;
+  const deliveryFee = useMemo(
+    () => deliveryAfterPromo(appliedPromo, baseDeliveryFee),
+    [appliedPromo, baseDeliveryFee]
+  );
   const appliedDiscount = useMemo(
-    () => discountForPromo(appliedPromo, subtotal, deliveryFee),
-    [appliedPromo, subtotal, deliveryFee]
+    () => merchandiseDiscount(appliedPromo, subtotal),
+    [appliedPromo, subtotal]
   );
   const grandTotal = Math.max(0, subtotal + deliveryFee - appliedDiscount);
 
@@ -519,6 +529,9 @@ export default function CartAndCheckout({
         };
       });
 
+      if (appliedPromo?.source === 'api') {
+        void redeemPromoCode(appliedPromo.code);
+      }
       onAddOrder(newOrder);
       onClearCart();
       onAddToast('Order Dispatched', `Invoice generated! Earned +${earnedPts} Loyalty Points.`, 'success');

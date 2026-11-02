@@ -11,6 +11,9 @@ import ProductDetailsModal from '@/components/ProductDetailsModal';
 import CatalogSearchBar from '@/components/CatalogSearchBar';
 import Select from '@/components/Select';
 import { buildColorOptions } from '@/lib/productGallery';
+import { isSmartphoneCategory } from '@/data/mobileOptions';
+import { isLaptopCategory } from '@/data/laptopOptions';
+import { isConfigurableIpad, isTabletCategory } from '@/data/tabletOptions';
 
 interface GroceryCatalogProps {
   products: GroceryItem[];
@@ -96,21 +99,31 @@ export default function GroceryCatalog({
   const [recognition, setRecognition] = useState<any>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Keep deep-link slug until the live catalog can resolve apiId matches (don't wipe URL early).
+  const [pendingDeepLink, setPendingDeepLink] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return new URLSearchParams(window.location.search).get('product');
+  });
 
   // Deep link: /?product=… or /product/[id] → open matching product details.
   useEffect(() => {
-    if (typeof window === 'undefined' || products.length === 0) return;
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get('product');
-    if (!slug) return;
+    if (!pendingDeepLink || products.length === 0) return;
+    const slug = pendingDeepLink;
     const match = products.find(
       (p) =>
         p.id === slug ||
         p.apiId === slug ||
         p.name.toLowerCase().replace(/\s+/g, '-') === slug.toLowerCase()
     );
-    if (match) setDetailsItem(match);
-  }, [products]);
+    if (match) {
+      setDetailsItem(match);
+      setPendingDeepLink(null);
+      return;
+    }
+    // Wait until at least one API-backed row exists before giving up on uuid links.
+    const catalogReady = products.some((p) => Boolean(p.apiId));
+    if (catalogReady) setPendingDeepLink(null);
+  }, [products, pendingDeepLink]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -121,12 +134,16 @@ export default function GroceryCatalog({
         url.searchParams.set('product', key);
         window.history.replaceState({}, '', `${url.pathname}?${url.searchParams.toString()}`);
       }
-    } else if (url.searchParams.has('product')) {
+      return;
+    }
+    // Don't strip ?product= while a deep link is still resolving against the catalog.
+    if (pendingDeepLink) return;
+    if (url.searchParams.has('product')) {
       url.searchParams.delete('product');
       const qs = url.searchParams.toString();
       window.history.replaceState({}, '', qs ? `${url.pathname}?${qs}` : url.pathname);
     }
-  }, [detailsItem]);
+  }, [detailsItem, pendingDeepLink]);
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -413,7 +430,18 @@ export default function GroceryCatalog({
           value={searchQuery}
           onChange={setSearchQuery}
           onAiFilter={setAiFilterIds}
-          onAddToCart={(item, qty, isSub) => onAddToCart(item, qty, isSub)}
+          onAddToCart={(item, qty, isSub) => {
+            const needsConfig =
+              isSmartphoneCategory(item.category) ||
+              isLaptopCategory(item.category) ||
+              (isTabletCategory(item.category) && isConfigurableIpad(item.name));
+            if (needsConfig) {
+              setDetailsItem(item);
+              onAddToast('Choose options', 'Pick finish and storage before adding to cart.', 'info');
+              return;
+            }
+            return onAddToCart(item, qty, isSub);
+          }}
           onOpenProduct={setDetailsItem}
           onAddToast={onAddToast}
           isListening={isListening}
