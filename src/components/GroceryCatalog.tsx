@@ -8,12 +8,8 @@ import { PRODUCT_BRANDS, PRODUCT_CATEGORIES } from '@/data/catalogTaxonomy';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductImage from '@/components/ProductImage';
 import ProductDetailsModal from '@/components/ProductDetailsModal';
-import CatalogSearchBar from '@/components/CatalogSearchBar';
 import Select from '@/components/Select';
 import { buildColorOptions } from '@/lib/productGallery';
-import { isSmartphoneCategory } from '@/data/mobileOptions';
-import { isLaptopCategory } from '@/data/laptopOptions';
-import { isConfigurableIpad, isTabletCategory } from '@/data/tabletOptions';
 
 interface GroceryCatalogProps {
   products: GroceryItem[];
@@ -28,6 +24,13 @@ interface GroceryCatalogProps {
   selectedZone: string;
   setSelectedZone: (zone: string) => void;
   onAddToast: (title: string, msg: string, type: 'success' | 'warning' | 'info') => void;
+  /** Controlled from showroom header — search is owned by the sticky nav. */
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  aiFilterIds: string[] | null;
+  setAiFilterIds: (ids: string[] | null) => void;
+  selectedCategory: string;
+  setSelectedCategory: (category: string) => void;
 }
 
 export interface BestValueInfo {
@@ -87,16 +90,17 @@ export default function GroceryCatalog({
   onAddToCart,
   selectedZone,
   setSelectedZone,
-  onAddToast
+  onAddToast,
+  searchQuery,
+  setSearchQuery,
+  aiFilterIds,
+  setAiFilterIds,
+  selectedCategory,
+  setSelectedCategory,
 }: GroceryCatalogProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [aiFilterIds, setAiFilterIds] = useState<string[] | null>(null);
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [detailsItem, setDetailsItem] = useState<GroceryItem | null>(null);
   const [onlyBestValue, setOnlyBestValue] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState<any>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Keep deep-link slug until the live catalog can resolve apiId matches (don't wipe URL early).
@@ -165,9 +169,17 @@ export default function GroceryCatalog({
       if (!category) return;
       setSelectedCategory(category);
     };
+    const onOpenProduct = (event: Event) => {
+      const item = (event as CustomEvent<GroceryItem>).detail;
+      if (item?.id) setDetailsItem(item);
+    };
     window.addEventListener('pixel-filter-category', onNavCategory);
-    return () => window.removeEventListener('pixel-filter-category', onNavCategory);
-  }, []);
+    window.addEventListener('pixel-open-product', onOpenProduct);
+    return () => {
+      window.removeEventListener('pixel-filter-category', onNavCategory);
+      window.removeEventListener('pixel-open-product', onOpenProduct);
+    };
+  }, [setSelectedCategory]);
 
   // Best value = lowest unit price within the same category (not global unit-type)
   const bestValueMap = useMemo(() => {
@@ -217,68 +229,6 @@ export default function GroceryCatalog({
       window.removeEventListener('offline', handleOffline);
     };
   }, [onAddToast]);
-
-  useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    const rec = new SpeechRecognition();
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.lang = 'en-US';
-
-    rec.onstart = () => {
-      setIsListening(true);
-      onAddToast('Listening...', 'Speak the product name to search.', 'info');
-    };
-
-    rec.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setSearchQuery(transcript);
-      onAddToast('Voice Search', `Searching for: "${transcript}"`, 'success');
-    };
-
-    rec.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed') {
-        onAddToast('Access Denied', 'Please enable microphone permission to use voice search.', 'warning');
-      } else if (event.error !== 'aborted') {
-        onAddToast('Search Error', `Voice search error: ${event.error}`, 'warning');
-      }
-      setIsListening(false);
-    };
-
-    rec.onend = () => {
-      setIsListening(false);
-    };
-
-    setRecognition(rec);
-    return () => {
-      try {
-        rec.abort();
-      } catch {
-        /* ignore */
-      }
-      setRecognition(null);
-    };
-  }, [onAddToast]);
-
-  const handleToggleSpeech = () => {
-    if (!recognition) {
-      onAddToast('Not Supported', 'Speech recognition is not supported on this browser.', 'warning');
-      return;
-    }
-
-    if (isListening) {
-      recognition.stop();
-    } else {
-      try {
-        recognition.start();
-      } catch (err) {
-        console.error('Speech recognition failed to start:', err);
-      }
-    }
-  };
 
   const availableBrands = useMemo(() => {
     const present = new Set(products.map((p) => p.brand).filter(Boolean));
@@ -389,7 +339,7 @@ export default function GroceryCatalog({
   }));
 
   return (
-    <div id="catalog-section" className="space-y-8 scroll-mt-20">
+    <div id="catalog-section" className="space-y-8 scroll-mt-28 md:scroll-mt-36">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-[#0f172a] dark:text-[#e7eef5] tracking-tight">
@@ -424,31 +374,8 @@ export default function GroceryCatalog({
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-start">
-        <CatalogSearchBar
-          products={products}
-          value={searchQuery}
-          onChange={setSearchQuery}
-          onAiFilter={setAiFilterIds}
-          onAddToCart={(item, qty, isSub) => {
-            const needsConfig =
-              isSmartphoneCategory(item.category) ||
-              isLaptopCategory(item.category) ||
-              (isTabletCategory(item.category) && isConfigurableIpad(item.name));
-            if (needsConfig) {
-              setDetailsItem(item);
-              onAddToast('Choose options', 'Pick finish and storage before adding to cart.', 'info');
-              return;
-            }
-            return onAddToCart(item, qty, isSub);
-          }}
-          onOpenProduct={setDetailsItem}
-          onAddToast={onAddToast}
-          isListening={isListening}
-          onToggleSpeech={handleToggleSpeech}
-        />
-
-        {/* Mobile: Brand / Category / Filters */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-end">
+        {/* Mobile: Brand / Category / Filters — search lives in the showroom header */}
         <div className="grid grid-cols-[1fr_1fr_auto] gap-2 md:hidden">
           <Select
             id="brand-select-mobile"

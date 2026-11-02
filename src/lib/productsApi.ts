@@ -39,6 +39,33 @@ function normalizeName(name: string): string {
   return name.toLowerCase().replace(/["“”']/g, '').replace(/\s+/g, ' ').trim();
 }
 
+/** Map pre-chip catalog titles → local enriched titles (until API rename deploys). */
+const LEGACY_NAME_TO_LOCAL: Record<string, string> = {
+  'macbook air': 'macbook air m5',
+  'macbook neo': 'macbook neo m4',
+  'macbook pro proled': 'macbook pro proled m5',
+  'macbook pro': 'macbook pro m6',
+  'imac': 'imac m6',
+  'mac mini': 'mac mini m6',
+  'ipad pro': 'ipad pro m5',
+  'ipad air': 'ipad air m2',
+  'ipad': 'ipad a16',
+};
+
+function findLocalByName(
+  apiName: string | undefined,
+  localByName: Map<string, GroceryItem>
+): { local?: GroceryItem; viaLegacy: boolean } {
+  if (!apiName) return { viaLegacy: false };
+  const key = normalizeName(apiName);
+  const exact = localByName.get(key);
+  if (exact) return { local: exact, viaLegacy: false };
+  const legacyKey = LEGACY_NAME_TO_LOCAL[key];
+  if (!legacyKey) return { viaLegacy: false };
+  const legacy = localByName.get(legacyKey);
+  return legacy ? { local: legacy, viaLegacy: true } : { viaLegacy: false };
+}
+
 function isPlaceholderImage(url?: string | null): boolean {
   if (!url) return true;
   const lower = url.toLowerCase();
@@ -78,11 +105,17 @@ function isElectronicsProduct(item: GroceryItem, hasLocalMatch: boolean): boolea
   );
 }
 
-function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
-  const name = api.name?.trim() || local?.name || 'Product';
+function mapApiProduct(
+  api: ApiProduct,
+  local?: GroceryItem,
+  opts?: { viaLegacy?: boolean }
+): GroceryItem {
+  // Prefer curated local titles (chip detail) when present; legacy API rows still map here.
+  const name = local?.name?.trim() || api.name?.trim() || 'Product';
   const priceNum = Number(api.price);
   const stock = typeof api.stock === 'number' ? api.stock : local?.stock ?? 0;
   // Live API gallery (sortOrder) is source of truth so admin reorder shows on the storefront.
+  // Until legacy rows are renamed/re-seeded, prefer the curated local gallery (e.g. iPad Pro hero).
   const apiGallery = [...(api.images ?? [])]
     .filter((img) => Boolean(img.path) && !isPlaceholderImage(img.path))
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
@@ -94,14 +127,24 @@ function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
       : local?.imageUrl && !isPlaceholderImage(local.imageUrl)
         ? [local.imageUrl]
         : [];
+  // Prefer curated hero when API still leads with finish-unselect for iPad Pro.
+  const apiHeroNeedsCurated =
+    localGallery.length > 0 &&
+    /ipad-pro-size-select/i.test(localGallery[0] || '') &&
+    apiGallery.length > 0 &&
+    !/ipad-pro-size-select/i.test(apiGallery[0] || '');
+  const preferLocalGallery =
+    localGallery.length > 0 && (Boolean(opts?.viaLegacy) || apiHeroNeedsCurated);
   const imageUrls =
-    apiGallery.length > 0
-      ? apiGallery
-      : localGallery.length > 0
-        ? localGallery
-        : [
-            'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80',
-          ];
+    preferLocalGallery
+      ? localGallery
+      : apiGallery.length > 0
+        ? apiGallery
+        : localGallery.length > 0
+          ? localGallery
+          : [
+              'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80',
+            ];
   const imageUrl = imageUrls[0];
 
   return {
@@ -164,8 +207,11 @@ export async function fetchCatalogProducts(signal?: AbortSignal): Promise<Grocer
 
   const mapped = (data as ApiProduct[])
     .map((api) => {
-      const local = api.name ? localByName.get(normalizeName(api.name)) : undefined;
-      return { item: mapApiProduct(api, local), hasLocal: Boolean(local) };
+      const { local, viaLegacy } = findLocalByName(api.name, localByName);
+      return {
+        item: mapApiProduct(api, local, { viaLegacy }),
+        hasLocal: Boolean(local),
+      };
     })
     .filter(({ item, hasLocal }) => isElectronicsProduct(item, hasLocal))
     .map(({ item }) => item);

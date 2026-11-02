@@ -41,6 +41,8 @@ interface CatalogSearchBarProps {
   onAddToast: (title: string, msg: string, type: 'success' | 'warning' | 'info') => void;
   isListening: boolean;
   onToggleSpeech: () => void;
+  /** Denser field for the sticky showroom header. */
+  variant?: 'default' | 'header';
 }
 
 export default function CatalogSearchBar({
@@ -53,6 +55,7 @@ export default function CatalogSearchBar({
   onAddToast,
   isListening,
   onToggleSpeech,
+  variant = 'default',
 }: CatalogSearchBarProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [ai, setAi] = useState<AiState | null>(null);
@@ -142,14 +145,16 @@ export default function CatalogSearchBar({
     }, 1500);
   };
 
+  const isHeader = variant === 'header';
+
   return (
-    <div ref={containerRef} className="relative flex-1">
+    <div ref={containerRef} className="relative flex-1 min-w-0">
       <Search className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 w-4.5 h-4.5 text-[#64748b]/70" />
       <input
         id="grocery-search"
         type="text"
         value={value}
-        placeholder="Search or ask AI…"
+        placeholder={isHeader ? 'Search the showroom…' : 'Search or ask AI…'}
         aria-label="Search products or ask Pixel AI"
         onFocus={() => setPanelOpen(true)}
         onChange={(e) => {
@@ -168,7 +173,11 @@ export default function CatalogSearchBar({
             setPanelOpen(false);
           }
         }}
-        className="w-full pl-11 pr-24 py-3 border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] rounded-2xl text-sm placeholder:text-[#64748b]/60 focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/40 transition-shadow"
+        className={`w-full pl-11 pr-24 border border-[#0284c7]/15 dark:border-white/10 bg-white dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] rounded-2xl text-sm placeholder:text-[#64748b]/60 focus:outline-hidden focus:ring-2 focus:ring-[#0ea5e9]/40 transition-[box-shadow,transform] ${
+          isHeader
+            ? 'py-2.5 shadow-sm focus:shadow-md focus:scale-[1.01]'
+            : 'py-3 bg-white/80'
+        }`}
       />
 
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">

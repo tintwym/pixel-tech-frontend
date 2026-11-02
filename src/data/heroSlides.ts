@@ -23,7 +23,7 @@ export const HERO_SLIDES: HeroSlide[] = [
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793586719/pixel-tech/hero/macbook-pro-m6.jpg',
     alt: 'MacBook Pro with M6 chip',
     kind: 'New',
-    headline: 'MacBook Pro',
+    headline: 'MacBook Pro M6',
     support: '14-inch model now with M6. Flagship power delivered across Yangon.',
     ctaLabel: 'Shop',
     category: 'Laptops',

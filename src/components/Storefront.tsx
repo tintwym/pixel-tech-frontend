@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import {
-  Bell, ShoppingCart, Moon, Sun, MapPin, Home,
-  FileText, LogIn, Monitor, Cpu, LayoutGrid, UserRound,
-  ChevronRight, Package, Truck
+  Moon, Sun, MapPin, Home,
+  Monitor, LayoutGrid, UserRound,
+  ChevronRight, Package, Truck, Bell, LogIn,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import HeroCarousel from '@/components/HeroCarousel';
@@ -15,10 +14,10 @@ import { INITIAL_GROCERIES } from '@/data/products';
 import { resolveProductGallery } from '@/lib/productGallery';
 
 import GroceryCatalog from '@/components/GroceryCatalog';
+import StorefrontHeader from '@/components/StorefrontHeader';
 import CartAndCheckout from '@/components/CartAndCheckout';
 import OrderTracker from '@/components/OrderTracker';
 import UserProfileModal from '@/components/UserProfileModal';
-import ProfileMenu from '@/components/ProfileMenu';
 import AuthModal from '@/components/AuthModal';
 import NotificationCenter, { NotificationMsg } from '@/components/NotificationCenter';
 import ToastContainer, { ToastMessage } from '@/components/ToastContainer';
@@ -46,25 +45,6 @@ import {
   subscribeOrderStatusEvents,
 } from '@/lib/orderStatusBus';
 import { fetchOrderFulfillmentSnapshots } from '@/lib/orderHistoryApi';
-
-/** Compact department links — catalog still owns search/filters. */
-const NAV_CATEGORIES: { label: string; category: string }[] = [
-  { label: 'Phones', category: 'Smartphones' },
-  { label: 'Laptops', category: 'Laptops' },
-  { label: 'Tablets', category: 'Tablets' },
-  { label: 'Audio', category: 'Audio / Headphones' },
-  { label: 'Watches', category: 'Smartwatches / Wearables' },
-];
-
-function jumpToCatalogCategory(category: string) {
-  if (typeof window === 'undefined') return;
-  window.dispatchEvent(
-    new CustomEvent('pixel-filter-category', { detail: category })
-  );
-  document
-    .getElementById('catalog-section')
-    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
 
 export default function Storefront() {
 
@@ -152,6 +132,15 @@ export default function Storefront() {
         : 'Theme: Light';
 
   const [selectedZone, setSelectedZone] = useState('All Zones');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [aiFilterIds, setAiFilterIds] = useState<string[] | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<{
+    start: () => void;
+    stop: () => void;
+    abort: () => void;
+  } | null>(null);
 
   // Modal Open/Close States
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -324,6 +313,16 @@ export default function Storefront() {
     (o) => o.status !== 'delivered' && o.status !== 'cancelled',
   ).length;
 
+  useEffect(() => {
+    const onNavCategory = (event: Event) => {
+      const category = (event as CustomEvent<string>).detail;
+      if (!category) return;
+      setSelectedCategory(category);
+    };
+    window.addEventListener('pixel-filter-category', onNavCategory);
+    return () => window.removeEventListener('pixel-filter-category', onNavCategory);
+  }, []);
+
   const goMobileHome = () => {
     setMobileTab('home');
     setIsCartOpen(false);
@@ -424,6 +423,74 @@ export default function Storefront() {
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 4000);
+  };
+
+  const unreadNotifications = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as unknown as { SpeechRecognition?: new () => any; webkitSpeechRecognition?: new () => any })
+        .SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: new () => any }).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const rec = new SpeechRecognition();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = 'en-US';
+
+    rec.onstart = () => {
+      setIsListening(true);
+      handleAddToast('Listening...', 'Speak the product name to search.', 'info');
+    };
+
+    rec.onresult = (event: { results: { [index: number]: { [index: number]: { transcript: string } } } }) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchQuery(transcript);
+      setAiFilterIds(null);
+      handleAddToast('Voice Search', `Searching for: "${transcript}"`, 'success');
+      document
+        .getElementById('catalog-section')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    rec.onerror = (event: { error: string }) => {
+      if (event.error === 'not-allowed') {
+        handleAddToast('Access Denied', 'Please enable microphone permission to use voice search.', 'warning');
+      } else if (event.error !== 'aborted') {
+        handleAddToast('Search Error', `Voice search error: ${event.error}`, 'warning');
+      }
+      setIsListening(false);
+    };
+
+    rec.onend = () => setIsListening(false);
+
+    setRecognition(rec);
+    return () => {
+      try {
+        rec.abort();
+      } catch {
+        /* ignore */
+      }
+      setRecognition(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleToggleSpeech = () => {
+    if (!recognition) {
+      handleAddToast('Not Supported', 'Speech recognition is not supported on this browser.', 'warning');
+      return;
+    }
+    if (isListening) {
+      recognition.stop();
+      return;
+    }
+    try {
+      recognition.start();
+    } catch (err) {
+      console.error('Speech recognition failed to start:', err);
+    }
   };
 
   const handleAddNotification = (
@@ -785,125 +852,35 @@ export default function Storefront() {
     <>
       <ToastContainer toasts={toasts} onRemove={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
 <div className="min-h-screen pb-28 sm:pb-8 text-[#0f172a] dark:text-[#e7eef5] transition-colors duration-300">
-      {/* HEADER NAVBAR */}
-      <header className="sticky top-0 z-40 bg-[#eef4f8]/90 dark:bg-[#0B1220]/92 backdrop-blur-xl border-b border-[#0284c7]/10 dark:border-white/8 transition-colors pt-[env(safe-area-inset-top)]">
-        <div className="max-w-7xl mx-auto px-3 sm:px-5 h-14 sm:h-16 flex items-center justify-between gap-3">
-          <Link
-            href="/"
-            onClick={goMobileHome}
-            className="flex items-center gap-2.5 shrink-0 no-underline min-w-0"
-          >
-            <div className="w-9 h-9 rounded-2xl bg-[#0284c7] text-white flex items-center justify-center ring-1 ring-[#0284c7]/20 shadow-market shrink-0">
-              <Cpu className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="font-display font-semibold text-[0.95rem] sm:text-lg tracking-tight leading-none text-[#0f172a] dark:text-[#e7eef5] truncate">
-                Pixel Tech
-              </h1>
-              <span className="hidden sm:block text-[10px] font-medium text-[#64748b] dark:text-[#8a9eb0] mt-0.5 truncate">
-                Electronics · Yangon
-              </span>
-            </div>
-          </Link>
-
-          <nav
-            className="hidden md:flex flex-1 items-center justify-center min-w-0 px-2"
-            aria-label="Shop by category"
-          >
-            <div className="flex items-center gap-0.5 max-w-full overflow-x-auto no-scrollbar">
-              {NAV_CATEGORIES.map(({ label, category }) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => jumpToCatalogCategory(category)}
-                  className="px-3 py-2 rounded-xl text-[13px] font-semibold text-[#475569] dark:text-[#94a3b8] hover:text-[#0284c7] dark:hover:text-sky-300 hover:bg-white/80 dark:hover:bg-white/5 transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </nav>
-
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Secondary actions — one compact cluster on tablet/desktop */}
-            <div className="hidden sm:flex items-center rounded-2xl border border-[#0284c7]/12 dark:border-white/10 bg-white/75 dark:bg-[#121a24]/90 p-0.5">
-              <button
-                type="button"
-                onClick={() => setIsOrderDetailsOpen(true)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-[0.85rem] px-2.5 text-[#0f172a] dark:text-[#e7eef5] hover:bg-[#e0f2fe]/80 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                title="Orders"
-                aria-label="View orders"
-              >
-                <FileText className="w-4 h-4 text-[#0ea5e9]" />
-                <span className="hidden lg:inline text-xs font-semibold">Orders</span>
-              </button>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-[0.85rem] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/80 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                aria-label={themeLabel}
-                title={themeLabel}
-              >
-                {themePref === 'system' ? (
-                  <Monitor className="w-4 h-4 text-[#0284c7]" />
-                ) : isDarkMode ? (
-                  <Sun className="w-4 h-4 text-amber-400" />
-                ) : (
-                  <Moon className="w-4 h-4" />
-                )}
-              </button>
-              <button
-                type="button"
-                id="notif-toggle-btn"
-                onClick={() => setIsNotificationOpen(true)}
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-[0.85rem] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/80 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                aria-label="Open notifications"
-              >
-                <Bell className="w-4 h-4" />
-                {notifications.filter((n) => !n.read).length > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#c45c26] rounded-full" />
-                )}
-              </button>
-            </div>
-
-            <button
-              type="button"
-              id="cart-toggle-btn"
-              onClick={goMobileCart}
-              className="inline-flex h-10 sm:h-9 items-center gap-1.5 rounded-2xl bg-[#0284c7] px-3 sm:px-3.5 text-white font-semibold hover:bg-[#0ea5e9] active:scale-[0.97] transition-[colors,transform] relative cursor-pointer shadow-market"
-              aria-label="View shopping cart"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span className="hidden sm:inline text-xs tracking-wide">Cart</span>
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 sm:static sm:ml-0.5 min-w-5 h-5 px-1.5 bg-white text-[#0284c7] text-[10px] font-bold rounded-full inline-flex items-center justify-center">
-                  {cartCount > 99 ? '99+' : cartCount}
-                </span>
-              )}
-            </button>
-
-            {isSignedIn ? (
-              <ProfileMenu
-                name={profile.name}
-                avatarUrl={profile.avatarUrl}
-                active={isProfileOpen}
-                onOpenProfile={() => setIsProfileOpen(true)}
-                onSignOut={handleSignOut}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsAuthOpen(true)}
-                className="inline-flex h-10 sm:h-9 items-center gap-1.5 rounded-2xl border border-[#0284c7]/20 bg-white/85 dark:bg-[#121a24] px-2.5 sm:px-3 text-[#0f172a] dark:text-[#e7eef5] text-xs font-semibold hover:bg-white dark:hover:bg-[#1a242f] transition-colors cursor-pointer"
-                aria-label="Sign in or create account"
-              >
-                <LogIn className="w-4 h-4" />
-                <span className="hidden sm:inline">Sign in</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
+      <StorefrontHeader
+        products={products}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onAiFilter={setAiFilterIds}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        cartCount={cartCount}
+        unreadNotifications={unreadNotifications}
+        themePref={themePref}
+        isDarkMode={isDarkMode}
+        themeLabel={themeLabel}
+        onToggleTheme={toggleTheme}
+        onOpenOrders={() => setIsOrderDetailsOpen(true)}
+        onOpenNotifications={() => setIsNotificationOpen(true)}
+        onOpenCart={goMobileCart}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        isSignedIn={isSignedIn}
+        profileName={profile.name}
+        profileAvatarUrl={profile.avatarUrl}
+        profileActive={isProfileOpen}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        onSignOut={handleSignOut}
+        onAddToCart={(item, qty, isSub) => handleAddToCart(item, qty, isSub)}
+        onAddToast={handleAddToast}
+        isListening={isListening}
+        onToggleSpeech={handleToggleSpeech}
+        onBrandClick={goMobileHome}
+      />
 
       {/* FULL-BLEED HERO — brand first, new + trending carousel */}
       <HeroCarousel />
@@ -944,6 +921,12 @@ export default function Storefront() {
           selectedZone={selectedZone}
           setSelectedZone={setSelectedZone}
           onAddToast={handleAddToast}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          aiFilterIds={aiFilterIds}
+          setAiFilterIds={setAiFilterIds}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
         />
         <SmartRecipes
           cart={cart}

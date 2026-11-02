@@ -115,7 +115,7 @@ const CATALOG_ITEMS: GroceryItem[] = [
   },
   {
     id: 'p5',
-    name: 'MacBook Air',
+    name: 'MacBook Air M5',
     description:
       'M5 Liquid Retina laptop with silent fanless design and all-day battery. Choose 13" or 15", memory, and storage. Finishes: Midnight, Starlight, Silver, and Sky Blue.',
     brand: 'Apple',
@@ -161,9 +161,9 @@ const CATALOG_ITEMS: GroceryItem[] = [
   },
   {
     id: 'p18',
-    name: 'MacBook Neo',
+    name: 'MacBook Neo M4',
     description:
-      'Colorful everyday MacBook with vivid finishes (Blush, Citrus, Indigo, Silver). Configure memory and storage to match your workflow.',
+      'M4 colorful everyday MacBook with vivid finishes (Blush, Citrus, Indigo, Silver). Configure memory and storage to match your workflow.',
     brand: 'Apple',
     category: 'Laptops',
     price: 3599000,
@@ -200,7 +200,7 @@ const CATALOG_ITEMS: GroceryItem[] = [
   },
   {
     id: 'p19',
-    name: 'MacBook Pro PROLED',
+    name: 'MacBook Pro PROLED M5',
     description:
       'Most advanced MacBook Pro with PROLED XDR (Tandem OLED) touch display, M5 Pro or M5 Max, and up to 24-hour battery. Choose 14.2" or 16.3", memory, and storage. Finishes: Space Black and Silver.',
     brand: 'Apple',
@@ -240,7 +240,7 @@ const CATALOG_ITEMS: GroceryItem[] = [
   },
   {
     id: 'p20',
-    name: 'iMac',
+    name: 'iMac M6',
     description:
       '24" 4.5K Retina all-in-one with M6, MagSafe, Center Stage camera, Wi-Fi 7, and matching Magic Keyboard + Magic Mouse. Colors: Blue, Purple, Pink, Orange, Yellow, Green, and Silver.',
     brand: 'Apple',
@@ -274,7 +274,7 @@ const CATALOG_ITEMS: GroceryItem[] = [
   },
   {
     id: 'p21',
-    name: 'Mac mini',
+    name: 'Mac mini M6',
     description:
       'Ultracompact 5×5" desktop with M6 or M5 Pro, front USB-C + headphone jack, Thunderbolt, HDMI, 2.5Gb Ethernet, Wi-Fi 7, and Bluetooth 6. Finish: Silver.',
     brand: 'Apple',
@@ -300,7 +300,7 @@ const CATALOG_ITEMS: GroceryItem[] = [
   },
   {
     id: 'p6',
-    name: 'MacBook Pro',
+    name: 'MacBook Pro M6',
     description:
       'Liquid Retina XDR with M6, M5 Pro, or M5 Max for code, video, and 3D. Choose 14.2" or 16.2", memory, and storage. Finishes: Space Black and Silver.',
     brand: 'Apple',
@@ -415,21 +415,22 @@ const CATALOG_ITEMS: GroceryItem[] = [
   },
   {
     id: 'p10',
-    name: 'iPad Pro',
+    name: 'iPad Pro M5',
     description:
       'Ultra Retina XDR (tandem OLED) with M5, Apple Pencil Pro support, and an ultrasleek design. Choose 11" or 13", storage, and finish. Finishes: Silver and Space Black.',
     brand: 'Apple',
     category: 'Tablets',
     price: 3899000,
     currency: 'MMK',
-        imageUrl:
-      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589269/pixel-tech/products/ipad-pro-finish-unselect-202405-gallery-1-a26c19e5.jpg',
+    // Card hero: size-select “Pro” wallpaper (clearest identity); then unselect + finish packs.
+    imageUrl:
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589271/pixel-tech/products/ipad-pro-size-select-202405-gallery-1-35bfe670.jpg',
     imageUrls: [
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589271/pixel-tech/products/ipad-pro-size-select-202405-gallery-1-35bfe670.jpg',
+      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589272/pixel-tech/products/ipad-pro-size-select-202405-gallery-2-ac5f7d0b.jpg',
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589269/pixel-tech/products/ipad-pro-finish-unselect-202405-gallery-1-a26c19e5.jpg',
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589270/pixel-tech/products/ipad-pro-finish-unselect-202405-gallery-2-58eb1f8f.jpg',
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589271/pixel-tech/products/ipad-pro-finish-unselect-202405-gallery-3-85aa04a3.jpg',
-      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589271/pixel-tech/products/ipad-pro-size-select-202405-gallery-1-35bfe670.jpg',
-      'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589272/pixel-tech/products/ipad-pro-size-select-202405-gallery-2-ac5f7d0b.jpg',
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589351/pixel-tech/products/ipad-pro-finish-select-202405-11inch-spaceblack-881dea03.jpg',
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589324/pixel-tech/products/ipad-pro-finish-select-202405-11inch-spaceblack-av1-1055ba7b.jpg',
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589273/pixel-tech/products/ipad-pro-finish-select-202405-11inch-silver-541e6e89.jpg',
@@ -454,14 +455,14 @@ const CATALOG_ITEMS: GroceryItem[] = [
   },
   {
     id: 'p22',
-    name: 'iPad Air',
+    name: 'iPad Air M2',
     description:
       'Liquid Retina with M2, Landscape 12MP Ultra Wide front camera, Apple Pencil Pro support, and an all-day battery. Choose 11" or 13", storage, and finish. Finishes: Blue, Purple, Starlight, and Space Gray.',
     brand: 'Apple',
     category: 'Tablets',
     price: 2499000,
     currency: 'MMK',
-        imageUrl:
+    imageUrl:
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589249/pixel-tech/products/ipad-air-finish-unselect-202405-gallery-1-f40c1cf2.webp',
     imageUrls: [
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589249/pixel-tech/products/ipad-air-finish-unselect-202405-gallery-1-f40c1cf2.webp',
@@ -505,14 +506,14 @@ const CATALOG_ITEMS: GroceryItem[] = [
   },
   {
     id: 'p23',
-    name: 'iPad',
+    name: 'iPad A16',
     description:
       '11th-generation iPad with the A16 chip, 11" Liquid Retina display, Landscape 12MP Ultra Wide front camera, and USB-C. Choose storage and finish. Finishes: Blue, Pink, Yellow, and Silver.',
     brand: 'Apple',
     category: 'Tablets',
     price: 1499000,
     currency: 'MMK',
-        imageUrl:
+    imageUrl:
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589239/pixel-tech/products/ipad-finish-unselect-202503-gallery-1-90617569.webp',
     imageUrls: [
       'https://res.cloudinary.com/diqkh6yqr/image/upload/v1793589239/pixel-tech/products/ipad-finish-unselect-202503-gallery-1-90617569.webp',
