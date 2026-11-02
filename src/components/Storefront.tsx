@@ -684,86 +684,97 @@ export default function Storefront() {
       <ToastContainer toasts={toasts} onRemove={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
 <div className="min-h-screen pb-28 sm:pb-8 text-[#0f172a] dark:text-[#e7eef5] transition-colors duration-300">
       {/* HEADER NAVBAR */}
-      <header className="sticky top-0 z-40 bg-[#eef4f8]/85 dark:bg-[#0B1220]/90 backdrop-blur-md border-b border-[#0284c7]/12 dark:border-white/8 transition-colors">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2 sm:gap-4">
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 shrink-0 no-underline">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#0284c7] text-white flex items-center justify-center ring-1 ring-[#0284c7]/20 shadow-market">
-              <Cpu className="w-4 h-4 sm:w-5 sm:h-5" />
+      <header className="sticky top-0 z-40 bg-[#eef4f8]/90 dark:bg-[#0B1220]/92 backdrop-blur-xl border-b border-[#0284c7]/10 dark:border-white/8 transition-colors pt-[env(safe-area-inset-top)]">
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 h-14 sm:h-16 flex items-center justify-between gap-3">
+          <Link
+            href="/"
+            onClick={goMobileHome}
+            className="flex items-center gap-2.5 shrink-0 no-underline min-w-0"
+          >
+            <div className="w-9 h-9 rounded-2xl bg-[#0284c7] text-white flex items-center justify-center ring-1 ring-[#0284c7]/20 shadow-market shrink-0">
+              <Cpu className="w-4 h-4" />
             </div>
-            <div>
-              <h1 className="font-display font-semibold text-base sm:text-xl tracking-tight leading-none text-[#0f172a] dark:text-[#e7eef5]">
+            <div className="min-w-0">
+              <h1 className="font-display font-semibold text-[0.95rem] sm:text-lg tracking-tight leading-none text-[#0f172a] dark:text-[#e7eef5] truncate">
                 Pixel Tech
               </h1>
-              <span className="text-[10px] font-medium text-[#64748b] dark:text-[#8a9eb0] block mt-0.5">
+              <span className="hidden sm:block text-[10px] font-medium text-[#64748b] dark:text-[#8a9eb0] mt-0.5 truncate">
                 Electronics · Yangon
               </span>
             </div>
           </Link>
 
           <nav
-            className="hidden md:flex flex-1 items-center justify-center gap-1 min-w-0 px-2"
+            className="hidden md:flex flex-1 items-center justify-center min-w-0 px-2"
             aria-label="Shop by category"
           >
-            {NAV_CATEGORIES.map(({ label, category }) => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => jumpToCatalogCategory(category)}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold text-[#475569] dark:text-[#94a3b8] hover:text-[#0284c7] dark:hover:text-sky-300 hover:bg-white/70 dark:hover:bg-white/5 transition-colors cursor-pointer whitespace-nowrap"
-              >
-                {label}
-              </button>
-            ))}
+            <div className="flex items-center gap-0.5 max-w-full overflow-x-auto no-scrollbar">
+              {NAV_CATEGORIES.map(({ label, category }) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => jumpToCatalogCategory(category)}
+                  className="px-3 py-2 rounded-xl text-[13px] font-semibold text-[#475569] dark:text-[#94a3b8] hover:text-[#0284c7] dark:hover:text-sky-300 hover:bg-white/80 dark:hover:bg-white/5 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Tablet/desktop extras — mobile keeps cart in header; tracking is a bottom tab */}
-            <button
-              onClick={() => setIsOrderDetailsOpen(true)}
-              className="hidden sm:flex p-2 sm:px-3 sm:py-1.5 bg-white/70 hover:bg-white dark:bg-[#121a24] dark:hover:bg-[#1a242f] border border-[#0284c7]/12 dark:border-white/10 text-[#0f172a] dark:text-[#e7eef5] font-semibold text-xs rounded-2xl items-center gap-1.5 cursor-pointer transition-colors"
-              title="View past order receipts & reorder"
-            >
-              <FileText className="w-4 h-4 text-[#0ea5e9]" />
-              <span className="hidden lg:inline">Orders</span>
-            </button>
+            {/* Secondary actions — one compact cluster on tablet/desktop */}
+            <div className="hidden sm:flex items-center rounded-2xl border border-[#0284c7]/12 dark:border-white/10 bg-white/75 dark:bg-[#121a24]/90 p-0.5">
+              <button
+                type="button"
+                onClick={() => setIsOrderDetailsOpen(true)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-[0.85rem] px-2.5 text-[#0f172a] dark:text-[#e7eef5] hover:bg-[#e0f2fe]/80 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                title="Orders"
+                aria-label="View orders"
+              >
+                <FileText className="w-4 h-4 text-[#0ea5e9]" />
+                <span className="hidden lg:inline text-xs font-semibold">Orders</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[0.85rem] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/80 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                aria-label={themeLabel}
+                title={themeLabel}
+              >
+                {themePref === 'system' ? (
+                  <Monitor className="w-4 h-4 text-[#0284c7]" />
+                ) : isDarkMode ? (
+                  <Sun className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Moon className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                type="button"
+                id="notif-toggle-btn"
+                onClick={() => setIsNotificationOpen(true)}
+                className="relative inline-flex h-9 w-9 items-center justify-center rounded-[0.85rem] text-[#64748b] dark:text-[#8a9eb0] hover:bg-[#e0f2fe]/80 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                aria-label="Open notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {notifications.filter((n) => !n.read).length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#c45c26] rounded-full" />
+                )}
+              </button>
+            </div>
 
             <button
-              onClick={toggleTheme}
-              className="hidden sm:inline-flex p-2 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/70 dark:bg-[#121a24] hover:bg-white dark:hover:bg-[#1a242f] text-[#64748b] dark:text-[#8a9eb0] cursor-pointer transition-colors"
-              aria-label={themeLabel}
-              title={themeLabel}
-            >
-              {themePref === 'system' ? (
-                <Monitor className="w-4.5 h-4.5 text-[#0284c7]" />
-              ) : isDarkMode ? (
-                <Sun className="w-4.5 h-4.5 text-amber-300" />
-              ) : (
-                <Moon className="w-4.5 h-4.5 text-[#64748b]" />
-              )}
-            </button>
-
-            <button
-              id="notif-toggle-btn"
-              onClick={() => setIsNotificationOpen(true)}
-              className="hidden sm:inline-flex p-2 rounded-2xl border border-[#0284c7]/12 dark:border-white/10 hover:bg-white/80 dark:hover:bg-[#121a24] text-[#64748b] dark:text-[#8a9eb0] relative cursor-pointer"
-              aria-label="Open notifications"
-            >
-              <Bell className="w-4.5 h-4.5" />
-              {notifications.filter(n => !n.read).length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#c45c26] rounded-full" />
-              )}
-            </button>
-
-            <button
+              type="button"
               id="cart-toggle-btn"
               onClick={goMobileCart}
-              className="inline-flex p-2.5 sm:px-3.5 sm:py-2 bg-[#0284c7] text-white font-semibold rounded-2xl hover:bg-[#0ea5e9] active:scale-[0.97] transition-[colors,transform] relative items-center gap-1.5 cursor-pointer shadow-market"
+              className="inline-flex h-10 sm:h-9 items-center gap-1.5 rounded-2xl bg-[#0284c7] px-3 sm:px-3.5 text-white font-semibold hover:bg-[#0ea5e9] active:scale-[0.97] transition-[colors,transform] relative cursor-pointer shadow-market"
               aria-label="View shopping cart"
             >
-              <ShoppingCart className="w-4.5 h-4.5" />
-              <span className="hidden sm:inline text-xs font-semibold tracking-wide">Cart</span>
+              <ShoppingCart className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs tracking-wide">Cart</span>
               {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 sm:static sm:ml-0 min-w-5 h-5 px-1.5 bg-white text-[#0284c7] text-[10px] font-bold rounded-full inline-flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 sm:static sm:ml-0.5 min-w-5 h-5 px-1.5 bg-white text-[#0284c7] text-[10px] font-bold rounded-full inline-flex items-center justify-center">
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
@@ -779,12 +790,13 @@ export default function Storefront() {
               />
             ) : (
               <button
+                type="button"
                 onClick={() => setIsAuthOpen(true)}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-[#0284c7]/25 bg-white/80 dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] text-xs font-semibold hover:bg-white dark:hover:bg-[#1a242f] transition-colors cursor-pointer"
+                className="inline-flex h-10 sm:h-9 items-center gap-1.5 rounded-2xl border border-[#0284c7]/20 bg-white/85 dark:bg-[#121a24] px-2.5 sm:px-3 text-[#0f172a] dark:text-[#e7eef5] text-xs font-semibold hover:bg-white dark:hover:bg-[#1a242f] transition-colors cursor-pointer"
                 aria-label="Sign in or create account"
               >
                 <LogIn className="w-4 h-4" />
-                Sign in
+                <span className="hidden sm:inline">Sign in</span>
               </button>
             )}
           </div>
