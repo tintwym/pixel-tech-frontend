@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { ShoppingCart, MapPin, TrendingUp, WifiOff, Star, Tag, LayoutGrid, SlidersHorizontal, X } from 'lucide-react';
+import { MapPin, WifiOff, Tag, LayoutGrid, SlidersHorizontal, X } from 'lucide-react';
 import { GroceryItem } from '@/types';
 import { ZONE_OPTIONS, ZONE_DELIVERY_STATUS } from '@/data/products';
 import { PRODUCT_BRANDS, PRODUCT_CATEGORIES } from '@/data/catalogTaxonomy';
 import { motion, AnimatePresence } from 'motion/react';
-import PriceSparkline from '@/components/PriceSparkline';
 import ProductImage from '@/components/ProductImage';
 import ProductDetailsModal from '@/components/ProductDetailsModal';
 import CatalogSearchBar from '@/components/CatalogSearchBar';
 import Select from '@/components/Select';
+import { buildColorOptions } from '@/lib/productGallery';
 
 interface GroceryCatalogProps {
   products: GroceryItem[];
@@ -92,10 +92,8 @@ export default function GroceryCatalog({
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [detailsItem, setDetailsItem] = useState<GroceryItem | null>(null);
   const [onlyBestValue, setOnlyBestValue] = useState(false);
-  const [quantities, setQuantities] = useState<{ [itemId: string]: number }>({});
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
-  const [expandedSparklines, setExpandedSparklines] = useState<{ [itemId: string]: boolean }>({});
   const [isOffline, setIsOffline] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -291,22 +289,6 @@ export default function GroceryCatalog({
     onlyBestValue,
     bestValueMap,
   ]);
-
-  const handleAddToCartClick = (item: GroceryItem) => {
-    const qty = quantities[item.id] || 1;
-
-    if (item.stock < qty) {
-      onAddToast('Insufficient Stock', `Only ${item.stock} items left in inventory.`, 'warning');
-      return;
-    }
-
-    const added = onAddToCart(item, qty, false);
-    if (added === false) {
-      onAddToast('Cart limit reached', `You already have the max available stock of ${item.name}.`, 'warning');
-      return;
-    }
-    onAddToast('Added to Cart', `${qty}× ${item.name} added.`, 'success');
-  };
 
   const zoneDeliveryInfo = ZONE_DELIVERY_STATUS[selectedZone] || ZONE_DELIVERY_STATUS['All Zones'];
 
@@ -646,17 +628,15 @@ export default function GroceryCatalog({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
           {filteredProducts.map((item, index) => {
-            const qty = quantities[item.id] || 1;
             const out = item.stock === 0;
-            const low = item.stock > 0 && item.stock <= 5;
-            const itemBestValue = bestValueMap[item.id];
-            const showTrend = !!expandedSparklines[item.id];
+            const finishes = buildColorOptions(item.imageUrls?.length ? item.imageUrls : [item.imageUrl]);
 
             return (
-              <motion.article
+              <motion.button
                 key={item.id}
+                type="button"
                 layout
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -665,146 +645,63 @@ export default function GroceryCatalog({
                   delay: Math.min(index * 0.035, 0.25),
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="group flex flex-col bg-white/95 dark:bg-[#121a24] rounded-[1.35rem] overflow-hidden border border-[#0284c7]/08 dark:border-white/8 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] hover:shadow-[0_16px_32px_-14px_rgba(2,132,199,0.22)] transition-shadow duration-300"
+                whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                onClick={() => setDetailsItem(item)}
+                aria-label={`View details for ${item.name}`}
+                className="group flex flex-col text-left cursor-pointer"
               >
-                <button
-                  type="button"
-                  onClick={() => setDetailsItem(item)}
-                  className="relative aspect-[4/3] bg-[#e8f0f6] dark:bg-[#0B1220] overflow-hidden text-left cursor-pointer"
-                  aria-label={`View details for ${item.name}`}
-                >
+                <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#e8f0f6] dark:bg-[#0B1220]">
                   <ProductImage
                     src={item.imageUrl}
                     alt={item.name}
-                    className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                    className={`h-full w-full object-contain p-4 sm:p-5 transition-transform duration-500 ease-out group-hover:scale-[1.03] ${
+                      out ? 'opacity-45' : ''
+                    }`}
                   />
                   {out && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-[#0B1220]/45 text-white text-xs font-semibold tracking-wide">
-                      Sold out
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="rounded-full bg-[#0B1220]/75 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+                        Sold out
+                      </span>
                     </span>
                   )}
-                  {itemBestValue?.isBestValue && (
-                    <span className="absolute top-2.5 left-2.5 text-[10px] font-semibold text-slate-950 bg-amber-400 px-2 py-0.5 rounded-md shadow-sm">
-                      Best value
-                    </span>
-                  )}
-                  {!out && low && (
-                    <span className="absolute bottom-2.5 left-2.5 text-[10px] font-semibold text-white bg-[#0f172a]/75 px-2 py-0.5 rounded-md">
-                      {item.stock} left
-                    </span>
-                  )}
-                  {item.rating > 0 && (
-                    <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 text-[10px] font-semibold text-[#0f172a] bg-white/90 dark:bg-[#121a24]/90 backdrop-blur-sm px-2 py-0.5 rounded-md">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      {item.rating.toFixed(1)}
-                    </span>
-                  )}
-                </button>
-
-                <div className="flex flex-1 flex-col p-3.5 sm:p-4 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setDetailsItem(item)}
-                    className="min-h-0 text-left cursor-pointer"
-                  >
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#0284c7] dark:text-sky-400">
-                      {item.brand} · {item.category}
-                    </p>
-                    <h3 className="mt-1 font-display font-semibold text-[15px] sm:text-base text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2">
-                      {item.name}
-                    </h3>
-                    <p className="mt-1 text-[11px] text-[#64748b] dark:text-[#8a9eb0]">
-                      {item.unit}
-                    </p>
-                  </button>
-
-                  <div className="mt-auto space-y-2.5 pt-1">
-                    <div className="flex items-end justify-between gap-2">
-                      <p className="font-semibold text-[#0f172a] dark:text-[#e7eef5] tabular-nums leading-none">
-                        <span className="text-lg sm:text-xl tracking-tight">
-                          {item.price.toLocaleString()}
-                        </span>
-                        <span className="ml-1 text-[10px] font-medium text-[#64748b]">MMK</span>
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedSparklines((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
-                        }
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-[#64748b] hover:text-[#0284c7] dark:text-[#8a9eb0] dark:hover:text-sky-400 transition-colors cursor-pointer"
-                        aria-expanded={showTrend}
-                        aria-label={showTrend ? 'Hide price trend' : 'Show price trend'}
-                      >
-                        <TrendingUp className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{showTrend ? 'Hide' : 'Trend'}</span>
-                      </button>
-                    </div>
-
-                    <AnimatePresence initial={false}>
-                      {showTrend && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <PriceSparkline itemId={item.id} basePrice={item.price} />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    <div className="flex items-center gap-2">
-                      <div className="flex flex-1 items-center rounded-xl border border-[#0284c7]/12 dark:border-white/10 overflow-hidden h-10 bg-[#eef4f8]/70 dark:bg-[#0B1220]">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setQuantities((prev) => ({
-                              ...prev,
-                              [item.id]: Math.max(1, (prev[item.id] || 1) - 1),
-                            }))
-                          }
-                          className="px-2.5 h-full text-[#64748b] hover:bg-[#e0f2fe]/60 font-medium"
-                          aria-label="Decrease quantity"
-                        >
-                          −
-                        </button>
-                        <span className="flex-1 text-center text-xs font-semibold tabular-nums">{qty}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setQuantities((prev) => ({
-                              ...prev,
-                              [item.id]: Math.min(item.stock || 1, (prev[item.id] || 1) + 1),
-                            }))
-                          }
-                          disabled={out || qty >= item.stock}
-                          className="px-2.5 h-full text-[#64748b] hover:bg-[#e0f2fe]/60 font-medium disabled:opacity-40"
-                          aria-label="Increase quantity"
-                        >
-                          +
-                        </button>
-                      </div>
-
-                      <motion.button
-                        type="button"
-                        disabled={out}
-                        onClick={() => handleAddToCartClick(item)}
-                        whileTap={out ? undefined : { scale: 0.97 }}
-                        aria-label={out ? 'Sold out' : `Add ${item.name} to cart`}
-                        title={out ? 'Sold out' : 'Add to cart'}
-                        className={`shrink-0 h-10 w-10 rounded-xl inline-flex items-center justify-center transition-colors cursor-pointer ${
-                          out
-                            ? 'bg-[#e8f0f6] dark:bg-[#1a242f] text-[#64748b]/50 cursor-not-allowed'
-                            : 'bg-[#0284c7] hover:bg-[#0ea5e9] text-white'
-                        }`}
-                      >
-                        <ShoppingCart className="w-4 h-4" aria-hidden />
-                      </motion.button>
-                    </div>
-                  </div>
                 </div>
-              </motion.article>
+
+                <div className="mt-3 flex flex-1 flex-col gap-1.5 px-0.5">
+                  <h3 className="font-display font-semibold text-[14px] sm:text-[15px] text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2">
+                    {item.name}
+                  </h3>
+                  <p
+                    className={`font-semibold tabular-nums leading-none ${
+                      out
+                        ? 'text-[#94a3b8] dark:text-[#64748b]'
+                        : 'text-[#0f172a] dark:text-[#e7eef5]'
+                    }`}
+                  >
+                    <span className="text-base sm:text-lg tracking-tight">
+                      {item.price.toLocaleString()}
+                    </span>
+                    <span className="ml-1 text-[10px] font-medium text-[#64748b]">MMK</span>
+                  </p>
+                  {finishes.length > 1 && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5" aria-hidden>
+                      {finishes.slice(0, 6).map((color) => (
+                        <span
+                          key={color.id}
+                          className="h-2.5 w-2.5 rounded-full border border-black/10 dark:border-white/20"
+                          style={{ backgroundColor: color.swatch }}
+                          title={color.label}
+                        />
+                      ))}
+                      {finishes.length > 6 && (
+                        <span className="text-[10px] font-medium text-[#64748b]">
+                          +{finishes.length - 6}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.button>
             );
           })}
         </div>

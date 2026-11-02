@@ -63,10 +63,10 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
 
   const mobileFocal =
     slide.id === 'iphone-duo'
-      ? 'object-[center_35%]'
+      ? 'object-[center_42%]'
       : slide.id === 'macbook-pro-m6'
-        ? 'object-[center_70%]'
-        : 'object-bottom';
+        ? 'object-[center_55%]'
+        : 'object-center';
 
   return (
     <section
@@ -100,9 +100,9 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
         <div className={`absolute inset-0 ${desktopOverlay}`} aria-hidden />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[min(92dvh,100svh)] w-full max-w-7xl flex-col sm:min-h-[88vh] sm:justify-end">
-        {/* Apple-style mobile stack: copy → CTAs → image */}
-        <div className="flex flex-1 flex-col sm:flex-none sm:pb-28 sm:pt-28 lg:pb-32">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col sm:min-h-[88vh] sm:justify-end">
+        {/* Mobile: compact copy → CTAs → image (no viewport stretch / dead gap) */}
+        <div className="flex flex-col sm:pb-28 sm:pt-28 lg:pb-32">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${slide.id}-copy`}
@@ -110,41 +110,41 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? undefined : { opacity: 0, y: -10 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="mx-auto w-full max-w-xl shrink-0 px-5 pt-[max(4.75rem,calc(env(safe-area-inset-top)+3.75rem))] text-center sm:mx-0 sm:max-w-2xl sm:px-10 sm:pt-0 sm:text-left lg:px-16"
+              className="mx-auto w-full max-w-xl px-5 pt-7 text-center sm:mx-0 sm:max-w-2xl sm:px-10 sm:pt-0 sm:text-left lg:px-16"
             >
               <p
-                className={`font-display text-[2rem] font-semibold leading-[1.05] tracking-tight text-balance sm:text-6xl sm:leading-[0.95] md:text-7xl lg:text-8xl ${brandClass}`}
+                className={`font-display text-[1.75rem] font-semibold leading-[1.05] tracking-tight text-balance sm:text-6xl sm:leading-[0.95] md:text-7xl lg:text-8xl ${brandClass}`}
               >
                 Pixel Tech
               </p>
               <p
-                className={`mt-2.5 text-[11px] font-medium uppercase tracking-[0.16em] sm:mt-5 sm:text-xs sm:tracking-[0.18em] ${kindClass}`}
+                className={`mt-2 text-[10px] font-medium uppercase tracking-[0.16em] sm:mt-5 sm:text-xs sm:tracking-[0.18em] ${kindClass}`}
               >
                 {slide.kind}
               </p>
               <h2
-                className={`mt-1.5 font-display text-[1.5rem] font-semibold leading-snug text-balance sm:mt-2 sm:text-2xl sm:font-medium md:text-3xl ${headlineClass}`}
+                className={`mt-1 font-display text-[1.35rem] font-semibold leading-snug text-balance sm:mt-2 sm:text-2xl sm:font-medium md:text-3xl ${headlineClass}`}
               >
                 {slide.headline}
               </h2>
               <p
-                className={`mx-auto mt-1.5 max-w-[20rem] text-[15px] leading-snug sm:mx-0 sm:mt-3 sm:max-w-md sm:text-base sm:leading-relaxed ${supportClass}`}
+                className={`mx-auto mt-1.5 max-w-[20rem] text-[14px] leading-snug sm:mx-0 sm:mt-3 sm:max-w-md sm:text-base sm:leading-relaxed ${supportClass}`}
               >
                 {slide.support}
               </p>
 
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 sm:mt-8 sm:justify-start sm:gap-3">
+              <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2.5 sm:mt-8 sm:justify-start sm:gap-3">
                 <button
                   type="button"
                   onClick={() => jumpToCatalog(slide.category)}
-                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-[#0071e3] px-5 py-2.5 text-[14px] font-medium text-white transition-[colors,transform] hover:bg-[#0077ed] active:scale-[0.98] cursor-pointer"
+                  className="inline-flex min-h-9 items-center justify-center rounded-full bg-[#0071e3] px-4.5 py-2 text-[13px] font-medium text-white transition-[colors,transform] hover:bg-[#0077ed] active:scale-[0.98] cursor-pointer sm:min-h-10 sm:px-5 sm:py-2.5 sm:text-[14px]"
                 >
                   {slide.ctaLabel}
                 </button>
                 <button
                   type="button"
                   onClick={() => jumpToCatalog()}
-                  className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border px-5 py-2.5 text-[14px] font-medium transition-[colors,transform] active:scale-[0.98] cursor-pointer ${outlineCta}`}
+                  className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border px-4.5 py-2 text-[13px] font-medium transition-[colors,transform] active:scale-[0.98] cursor-pointer sm:min-h-10 sm:px-5 sm:py-2.5 sm:text-[14px] ${outlineCta}`}
                 >
                   Browse all
                   <ArrowDown className="h-3.5 w-3.5 opacity-80" />
@@ -153,30 +153,30 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
             </motion.div>
           </AnimatePresence>
 
-          {/* Mobile product plane — centered, bottom-weighted, clipped into next section */}
-          <div className="relative mt-5 flex min-h-[48dvh] flex-1 items-end justify-center overflow-hidden sm:hidden">
+          {/* Mobile product plane — fixed height, sits flush under CTAs */}
+          <div className="relative mx-auto mt-4 h-[min(38vh,280px)] w-full max-w-lg overflow-hidden sm:hidden">
             <AnimatePresence mode="sync" initial={false}>
               <motion.img
                 key={`mob-${slide.id}`}
                 src={slide.imageUrl}
                 alt={slide.alt}
-                initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
+                initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
-                transition={{ duration: reduceMotion ? 0.2 : 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className={`h-full w-full object-cover ${mobileFocal}`}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                transition={{ duration: reduceMotion ? 0.2 : 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className={`absolute inset-0 h-full w-full object-cover ${mobileFocal}`}
                 fetchPriority={index === 0 ? 'high' : 'auto'}
                 draggable={false}
               />
             </AnimatePresence>
 
             {count > 1 && (
-              <div className="absolute inset-x-0 bottom-3 z-10 flex items-center justify-center gap-2.5 px-5 pb-[env(safe-area-inset-bottom)]">
+              <div className="absolute inset-x-0 bottom-2.5 z-10 flex items-center justify-center gap-2 px-4">
                 <button
                   type="button"
                   aria-label="Previous slide"
                   onClick={() => go(index - 1)}
-                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur-md transition-colors cursor-pointer ${controlClass}`}
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-md transition-colors cursor-pointer ${controlClass}`}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </button>
@@ -194,11 +194,11 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
                         className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                           active
                             ? isDark
-                              ? 'w-6 bg-white'
-                              : 'w-6 bg-[#1d1d1f]'
+                              ? 'w-5 bg-white'
+                              : 'w-5 bg-[#1d1d1f]'
                             : isDark
-                              ? 'w-2 bg-white/40'
-                              : 'w-2 bg-black/25'
+                              ? 'w-1.5 bg-white/40'
+                              : 'w-1.5 bg-black/25'
                         }`}
                       />
                     );
@@ -208,7 +208,7 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
                   type="button"
                   aria-label="Next slide"
                   onClick={() => go(index + 1)}
-                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur-md transition-colors cursor-pointer ${controlClass}`}
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-md transition-colors cursor-pointer ${controlClass}`}
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>

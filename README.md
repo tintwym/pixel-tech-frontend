@@ -22,12 +22,12 @@ Admin dashboard: separate app in [`../admin`](../admin)
 
 | Variable | Purpose |
 |----------|---------|
-| `API_PROXY_TARGET` | Cloud Run / Spring origin (no `/api` suffix) |
+| `API_PROXY_TARGET` | Render / Spring origin (no `/api` suffix) |
 
 Production (Vercel): set the **same** keys in the Vercel project env, then redeploy.
 
 Live site: https://pixel-tech-mm.vercel.app  
-API: https://pixel-tech-api-389277809553.asia-southeast1.run.app
+API: https://YOUR-SERVICE.onrender.com (set after Render deploy)
 
 ## Stack
 
