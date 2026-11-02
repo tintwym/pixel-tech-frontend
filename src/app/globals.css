@@ -10,7 +10,8 @@
   --color-brand: #0284c7;
   --color-brand-bright: #0ea5e9;
   --color-brand-soft: #e0f2fe;
-  --color-mist: #eef4f8;
+  /* Cool showroom floor (less sky-wash than prior mist) */
+  --color-mist: #f4f6f8;
   --color-ink: #0f172a;
   --color-ink-muted: #64748b;
 }
@@ -26,17 +27,19 @@
 
   body {
     font-family: var(--font-sans);
-    @apply bg-[#eef4f8] text-[#0f172a] antialiased;
+    @apply bg-mist text-[#0f172a] antialiased;
     background-image:
-      radial-gradient(ellipse 80% 50% at 10% -10%, rgb(224 242 254 / 0.9), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 0%, rgb(186 230 253 / 0.35), transparent);
+      linear-gradient(180deg, #f8fafc 0%, #f4f6f8 42%, #eef2f6 100%),
+      radial-gradient(ellipse 70% 45% at 50% -8%, rgb(14 165 233 / 0.10), transparent 55%);
+    background-attachment: fixed;
   }
 
   html.dark body {
     @apply bg-[#0B1220] text-[#e7eef5];
     background-image:
-      radial-gradient(ellipse 70% 45% at 0% 0%, rgb(2 132 199 / 0.28), transparent),
-      radial-gradient(ellipse 50% 40% at 100% 10%, rgb(12 74 110 / 0.35), transparent);
+      linear-gradient(180deg, #0d1524 0%, #0B1220 50%, #091018 100%),
+      radial-gradient(ellipse 60% 40% at 50% -10%, rgb(2 132 199 / 0.18), transparent 55%);
+    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {

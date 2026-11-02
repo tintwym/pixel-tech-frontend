@@ -161,20 +161,20 @@ export default function StorefrontHeader({
   );
 
   return (
-    <header className="sticky top-0 z-40 bg-[#eef4f8]/92 dark:bg-[#0B1220]/94 backdrop-blur-xl border-b border-[#0284c7]/10 dark:border-white/8 transition-colors pt-[env(safe-area-inset-top)]">
+    <header className="sticky top-0 z-40 bg-mist/90 dark:bg-[#0B1220]/94 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/8 transition-colors pt-[env(safe-area-inset-top)]">
       {/* Row 1 — brand · search · utilities */}
       <div className="max-w-7xl mx-auto px-3 sm:px-5">
         <div className="h-14 sm:h-16 flex items-center gap-2 sm:gap-3">
           <Link
             href="/"
             onClick={onBrandClick}
-            className="flex items-center gap-2.5 shrink-0 no-underline min-w-0"
+            className="flex items-center gap-2 shrink-0 no-underline min-w-0 max-w-[46%] sm:max-w-none"
           >
-            <div className="w-9 h-9 rounded-2xl bg-[#0284c7] text-white flex items-center justify-center ring-1 ring-[#0284c7]/20 shadow-market shrink-0">
-              <Cpu className="w-4 h-4" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-[#0284c7] text-white flex items-center justify-center ring-1 ring-[#0284c7]/20 shadow-market shrink-0">
+              <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-display font-semibold text-[1.05rem] sm:text-xl tracking-tight leading-none text-[#0f172a] dark:text-[#e7eef5] truncate">
+              <h1 className="font-display font-semibold text-[0.95rem] sm:text-xl tracking-tight leading-none text-[#0f172a] dark:text-[#e7eef5] truncate">
                 Pixel Tech
               </h1>
               <span className="hidden sm:block text-[10px] font-medium text-[#64748b] dark:text-[#8a9eb0] mt-0.5 truncate">
@@ -190,7 +190,7 @@ export default function StorefrontHeader({
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
             <button
               type="button"
-              className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/85 dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] cursor-pointer"
+              className="md:hidden inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] cursor-pointer"
               aria-label={mobileSearchOpen ? 'Close search' : 'Search products'}
               aria-expanded={mobileSearchOpen}
               onClick={() => setMobileSearchOpen((v) => !v)}
@@ -243,7 +243,7 @@ export default function StorefrontHeader({
               id="cart-toggle-btn"
               onClick={onOpenCart}
               whileTap={{ scale: 0.97 }}
-              className="inline-flex h-10 sm:h-9 items-center gap-1.5 rounded-2xl bg-[#0284c7] px-3 sm:px-3.5 text-white font-semibold hover:bg-[#0ea5e9] transition-colors relative cursor-pointer shadow-market"
+              className="inline-flex h-9 sm:h-9 items-center gap-1.5 rounded-xl sm:rounded-2xl bg-[#0284c7] px-2.5 sm:px-3.5 text-white font-semibold hover:bg-[#0ea5e9] transition-colors relative cursor-pointer shadow-market"
               aria-label="View shopping cart"
             >
               <ShoppingCart className="w-4 h-4" />
@@ -275,7 +275,7 @@ export default function StorefrontHeader({
               <button
                 type="button"
                 onClick={onOpenAuth}
-                className="inline-flex h-10 sm:h-9 items-center gap-1.5 rounded-2xl border border-[#0284c7]/20 bg-white/85 dark:bg-[#121a24] px-2.5 sm:px-3 text-[#0f172a] dark:text-[#e7eef5] text-xs font-semibold hover:bg-white dark:hover:bg-[#1a242f] transition-colors cursor-pointer"
+                className="inline-flex h-9 sm:h-9 items-center gap-1.5 rounded-xl sm:rounded-2xl border border-[#0284c7]/20 bg-white dark:bg-[#121a24] px-2 sm:px-3 text-[#0f172a] dark:text-[#e7eef5] text-xs font-semibold hover:bg-white dark:hover:bg-[#1a242f] transition-colors cursor-pointer"
                 aria-label="Sign in or create account"
               >
                 <LogIn className="w-4 h-4" />

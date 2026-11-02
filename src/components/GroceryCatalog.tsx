@@ -350,12 +350,12 @@ export default function GroceryCatalog({
     'min-w-[9.5rem] px-3 py-2.5 rounded-xl border border-[#0284c7]/12 dark:border-white/10 bg-white dark:bg-[#121a24] text-sm font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/30 dark:hover:border-white/20 transition-colors';
 
   return (
-    <div id="catalog-section" className="space-y-6 scroll-mt-28 md:scroll-mt-36">
+    <div id="catalog-section" className="space-y-5 sm:space-y-6 scroll-mt-28 md:scroll-mt-36">
       <div>
-        <h2 className="font-display text-3xl sm:text-4xl font-semibold text-[#0f172a] dark:text-[#e7eef5] tracking-tight">
+        <h2 className="font-display text-2xl sm:text-4xl font-semibold text-[#0f172a] dark:text-[#e7eef5] tracking-tight">
           Shop all
         </h2>
-        <p className="mt-1 text-sm text-[#64748b] dark:text-[#8a9eb0]">
+        <p className="mt-1 text-xs sm:text-sm text-[#64748b] dark:text-[#8a9eb0] text-balance">
           Newest first · mobiles, laptops &amp; accessories for Yangon delivery.
         </p>
       </div>
@@ -377,9 +377,9 @@ export default function GroceryCatalog({
       </AnimatePresence>
 
       {/* Showroom filter toolbar */}
-      <div className="rounded-2xl border border-[#0284c7]/10 dark:border-white/8 bg-white/55 dark:bg-[#121a24]/55 backdrop-blur-sm px-3 py-3 sm:px-4">
-        {/* Mobile: Brand primary · Category · more filters */}
-        <div className="grid grid-cols-[1.2fr_1fr_auto] gap-2 md:hidden">
+      <div className="rounded-2xl border border-black/[0.05] dark:border-white/8 bg-white/80 dark:bg-[#121a24]/70 backdrop-blur-sm px-3 py-3 sm:px-4 shadow-[0_1px_0_rgb(15_23_42/0.03)]">
+        {/* Mobile: Brand full-width, then Category + more filters */}
+        <div className="flex flex-col gap-2 md:hidden">
           <Select
             id="brand-select-mobile"
             aria-label="Brand"
@@ -390,33 +390,35 @@ export default function GroceryCatalog({
             icon={<Tag className="w-3.5 h-3.5 text-[#0284c7] shrink-0" />}
             className={selectTriggerClass}
           />
-          <Select
-            id="category-select-mobile"
-            aria-label="Category"
-            value={selectedCategory}
-            onChange={setSelectedCategory}
-            options={categoryOptions}
-            size="sm"
-            className={`${selectTriggerClass} text-[#64748b] dark:text-[#94a3b8]`}
-          />
-          <button
-            type="button"
-            id="filters-open-mobile"
-            onClick={() => setFiltersOpen(true)}
-            className={`relative min-h-11 min-w-11 px-3 rounded-xl border inline-flex items-center justify-center transition-colors cursor-pointer ${
-              sheetFiltersActive
-                ? 'border-[#0284c7]/40 bg-[#e0f2fe]/70 text-[#0284c7] dark:border-sky-400/40 dark:bg-sky-500/15 dark:text-sky-300'
-                : 'border-[#0284c7]/12 dark:border-white/10 bg-white dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/30'
-            }`}
-            aria-label="Filters"
-            aria-haspopup="dialog"
-            aria-expanded={filtersOpen}
-          >
-            <SlidersHorizontal className="w-4 h-4 shrink-0" />
-            {sheetFiltersActive && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#0284c7] dark:bg-sky-400" aria-hidden />
-            )}
-          </button>
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <Select
+              id="category-select-mobile"
+              aria-label="Category"
+              value={selectedCategory}
+              onChange={setSelectedCategory}
+              options={categoryOptions}
+              size="sm"
+              className={`${selectTriggerClass} text-[#64748b] dark:text-[#94a3b8]`}
+            />
+            <button
+              type="button"
+              id="filters-open-mobile"
+              onClick={() => setFiltersOpen(true)}
+              className={`relative min-h-11 min-w-11 px-3 rounded-xl border inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                sheetFiltersActive
+                  ? 'border-[#0284c7]/40 bg-[#e0f2fe]/70 text-[#0284c7] dark:border-sky-400/40 dark:bg-sky-500/15 dark:text-sky-300'
+                  : 'border-[#0284c7]/12 dark:border-white/10 bg-white dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/30'
+              }`}
+              aria-label="More filters"
+              aria-haspopup="dialog"
+              aria-expanded={filtersOpen}
+            >
+              <SlidersHorizontal className="w-4 h-4 shrink-0" />
+              {sheetFiltersActive && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#0284c7] dark:bg-sky-400" aria-hidden />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Desktop: full-width Brand · Category · Zone · Best value · count/clear */}
@@ -520,7 +522,7 @@ export default function GroceryCatalog({
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="absolute inset-x-0 bottom-0 rounded-t-3xl border border-[#0284c7]/15 dark:border-white/10 bg-[#eef4f8] dark:bg-[#0B1220] shadow-market px-4 pt-3 pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+0.75rem))]"
+              className="absolute inset-x-0 bottom-0 rounded-t-3xl border border-[#0284c7]/15 dark:border-white/10 bg-mist dark:bg-[#0B1220] shadow-market px-4 pt-3 pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+5.5rem))]"
             >
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#0284c7]/25 dark:bg-white/20" aria-hidden />
               <div className="flex items-center justify-between gap-3 mb-4">
@@ -629,7 +631,7 @@ export default function GroceryCatalog({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10 sm:gap-x-8 sm:gap-y-12">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-8 sm:gap-x-8 sm:gap-y-12">
           {filteredProducts.map((item, index) => {
             const out = item.stock === 0;
             const finishes = buildColorOptions(item.imageUrls?.length ? item.imageUrls : [item.imageUrl]);
@@ -668,7 +670,7 @@ export default function GroceryCatalog({
                 </div>
 
                 <div className="mt-3.5 flex flex-1 flex-col gap-1">
-                  <h3 className="font-sans text-[13px] sm:text-sm font-medium text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2 tracking-[-0.01em]">
+                  <h3 className="font-sans text-xs sm:text-sm font-medium text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2 tracking-[-0.01em]">
                     {item.name}
                   </h3>
                   <p
@@ -678,7 +680,7 @@ export default function GroceryCatalog({
                         : 'text-[#334155] dark:text-[#cbd5e1]'
                     }`}
                   >
-                    <span className="text-sm sm:text-[15px] font-semibold tracking-tight">
+                    <span className="text-[13px] sm:text-[15px] font-semibold tracking-tight">
                       {item.price.toLocaleString()}
                     </span>
                     <span className="ml-1 text-[10px] font-medium text-[#94a3b8]">MMK</span>

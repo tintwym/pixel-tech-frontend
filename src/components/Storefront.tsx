@@ -995,7 +995,7 @@ export default function Storefront() {
       <AnimatePresence>
         {isMobileProfileOpen && (
           <motion.div
-            className="sm:hidden fixed inset-0 z-30 flex flex-col bg-[#eef4f8] dark:bg-[#0B1220]"
+            className="sm:hidden fixed inset-0 z-30 flex flex-col bg-mist dark:bg-[#0B1220]"
             role="region"
             aria-labelledby="mobile-profile-title"
             initial={{ opacity: 0 }}
@@ -1003,7 +1003,7 @@ export default function Storefront() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
           >
-            <header className="flex items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b border-[#0284c7]/10 dark:border-white/10 bg-[#eef4f8]/95 dark:bg-[#0B1220]/95 backdrop-blur-md">
+            <header className="flex items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b border-black/[0.05] dark:border-white/10 bg-mist/95 dark:bg-[#0B1220]/95 backdrop-blur-md">
               <h2
                 id="mobile-profile-title"
                 className="font-display text-xl font-semibold text-[#0f172a] dark:text-[#e7eef5]"
@@ -1096,7 +1096,7 @@ export default function Storefront() {
                     <button
                       type="button"
                       onClick={() => setIsProfileOpen(true)}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-black/[0.03] dark:active:bg-white/5"
                     >
                       <UserRound className="w-5 h-5 text-[#0284c7] shrink-0" />
                       <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
@@ -1108,7 +1108,7 @@ export default function Storefront() {
                     <button
                       type="button"
                       onClick={() => setIsOrderDetailsOpen(true)}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-black/[0.03] dark:active:bg-white/5"
                     >
                       <Package className="w-5 h-5 text-[#0284c7] shrink-0" />
                       <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
@@ -1120,7 +1120,7 @@ export default function Storefront() {
                     <button
                       type="button"
                       onClick={() => setIsNotificationOpen(true)}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-black/[0.03] dark:active:bg-white/5"
                     >
                       <Bell className="w-5 h-5 text-[#0284c7] shrink-0" />
                       <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
@@ -1133,7 +1133,7 @@ export default function Storefront() {
                   <button
                     type="button"
                     onClick={() => setIsAuthOpen(true)}
-                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-[#eef4f8] dark:active:bg-white/5"
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-black/[0.03] dark:active:bg-white/5"
                   >
                     <LogIn className="w-5 h-5 text-[#0284c7] shrink-0" />
                     <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
