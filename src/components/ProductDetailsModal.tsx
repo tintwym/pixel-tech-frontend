@@ -219,10 +219,10 @@ export default function ProductDetailsModal({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 24, scale: 0.98 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 flex w-full max-w-3xl max-h-[92vh] flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#0B1220] border border-slate-200 dark:border-white/10 shadow-2xl"
+          className="relative z-10 flex w-full max-w-3xl max-h-[min(92vh,100dvh)] flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#0B1220] border border-slate-200 dark:border-white/10 shadow-2xl pb-[env(safe-area-inset-bottom)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-white/10 px-4 sm:px-5 py-3.5">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-white/10 px-4 sm:px-5 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))] sm:pt-3.5">
             <div className="min-w-0">
               <p className="text-[10px] font-medium uppercase tracking-wide text-[#0284c7] dark:text-sky-400">
                 {item.brand} · {item.category}
@@ -247,7 +247,7 @@ export default function ProductDetailsModal({
           <div className="overflow-y-auto flex-1">
             <div className="grid sm:grid-cols-2 gap-0 sm:gap-0">
               <div className="relative bg-[#e8f0f6] dark:bg-[#0a1018]">
-                <div className="relative aspect-[4/3] sm:aspect-square">
+                <div className="relative aspect-[4/3] max-h-[42vh] sm:max-h-none sm:aspect-square">
                   <ProductImage
                     src={activeSrc}
                     alt={
@@ -264,7 +264,7 @@ export default function ProductDetailsModal({
                         onClick={() =>
                           setActiveIndex((i) => (i - 1 + gallery.length) % gallery.length)
                         }
-                        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-[#121a24]/90 text-[#0f172a] dark:text-white shadow-sm cursor-pointer"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 p-2.5 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full bg-white/90 dark:bg-[#121a24]/90 text-[#0f172a] dark:text-white shadow-sm cursor-pointer inline-flex items-center justify-center"
                         aria-label="Previous image"
                       >
                         <ChevronLeft className="w-4 h-4" />
@@ -272,7 +272,7 @@ export default function ProductDetailsModal({
                       <button
                         type="button"
                         onClick={() => setActiveIndex((i) => (i + 1) % gallery.length)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-[#121a24]/90 text-[#0f172a] dark:text-white shadow-sm cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full bg-white/90 dark:bg-[#121a24]/90 text-[#0f172a] dark:text-white shadow-sm cursor-pointer inline-flex items-center justify-center"
                         aria-label="Next image"
                       >
                         <ChevronRight className="w-4 h-4" />
@@ -506,12 +506,12 @@ export default function ProductDetailsModal({
                   </div>
                 )}
 
-                <div className="mt-auto flex items-center gap-2 pt-2">
+                <div className="sticky bottom-0 mt-auto -mx-4 sm:mx-0 flex items-center gap-2 border-t border-slate-100 dark:border-white/10 bg-white/95 dark:bg-[#0B1220]/95 px-4 sm:px-0 py-3 backdrop-blur-sm sm:border-0 sm:bg-transparent sm:backdrop-blur-none sm:pt-2 sm:pb-0">
                   <div className="flex items-center rounded-xl border border-[#0284c7]/12 dark:border-white/10 overflow-hidden h-11 bg-[#eef4f8]/70 dark:bg-[#0B1220]">
                     <button
                       type="button"
                       onClick={() => setQty((q) => Math.max(1, q - 1))}
-                      className="px-3 h-full text-[#64748b] hover:bg-[#e0f2fe]/60 font-medium cursor-pointer"
+                      className="px-3.5 min-w-11 h-full text-[#64748b] hover:bg-[#e0f2fe]/60 font-medium cursor-pointer"
                       aria-label="Decrease quantity"
                     >
                       −
@@ -521,7 +521,7 @@ export default function ProductDetailsModal({
                       type="button"
                       onClick={() => setQty((q) => Math.min(item.stock || 1, q + 1))}
                       disabled={out || qty >= item.stock}
-                      className="px-3 h-full text-[#64748b] hover:bg-[#e0f2fe]/60 font-medium disabled:opacity-40 cursor-pointer"
+                      className="px-3.5 min-w-11 h-full text-[#64748b] hover:bg-[#e0f2fe]/60 font-medium disabled:opacity-40 cursor-pointer"
                       aria-label="Increase quantity"
                     >
                       +
@@ -533,14 +533,14 @@ export default function ProductDetailsModal({
                     disabled={out}
                     onClick={handleAdd}
                     whileTap={out ? undefined : { scale: 0.97 }}
-                    className={`flex-1 h-11 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                    className={`flex-1 h-11 min-h-11 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                       out
                         ? 'bg-[#e8f0f6] dark:bg-[#1a242f] text-[#64748b]/50 cursor-not-allowed'
                         : 'bg-[#0284c7] hover:bg-[#0ea5e9] text-white'
                     }`}
                   >
-                    <ShoppingCart className="w-4 h-4" />
-                    {out ? 'Sold out' : 'Add to cart'}
+                    <ShoppingCart className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{out ? 'Sold out' : 'Add to cart'}</span>
                   </motion.button>
                 </div>
               </div>

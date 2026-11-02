@@ -4,10 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Bell, ShoppingCart, Moon, Sun, MapPin, Home,
-  FileText, LogIn, Monitor, Cpu, ArrowDown, LayoutGrid, UserRound,
+  FileText, LogIn, Monitor, Cpu, LayoutGrid, UserRound,
   ChevronRight, Package, Truck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import HeroCarousel from '@/components/HeroCarousel';
 
 import { GroceryItem, CartItem, Order, UserProfile, OrderStatus } from '@/types';
 import { INITIAL_GROCERIES } from '@/data/products';
@@ -790,49 +791,8 @@ export default function Storefront() {
         </div>
       </header>
 
-      {/* FULL-BLEED HERO — brand first */}
-      <section className="relative isolate min-h-[88vh] sm:min-h-[92vh] w-full overflow-hidden">
-        <motion.img
-          initial={{ scale: 1.08, opacity: 0.85 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-          src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=2400&q=80"
-          alt="Laptops and devices on a modern desk"
-          className="absolute inset-0 h-full w-full object-cover"
-          fetchPriority="high"
-        />
-        <div
-          className="absolute inset-0 bg-linear-to-t from-[#0B1220]/92 via-[#0B1220]/45 to-[#0B1220]/25"
-          aria-hidden
-        />
-        <div className="relative z-10 flex min-h-[88vh] sm:min-h-[92vh] flex-col justify-end px-5 pb-16 pt-28 sm:px-10 sm:pb-20 lg:px-16">
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-2xl"
-          >
-            <p className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold tracking-tight text-white text-balance leading-[0.95]">
-              Pixel Tech
-            </p>
-            <h2 className="mt-5 font-display text-xl sm:text-2xl md:text-3xl font-medium text-[#e0f2fe] text-balance leading-snug">
-              Flagship gadgets, delivered across Yangon.
-            </h2>
-            <p className="mt-3 max-w-md text-sm sm:text-base text-white/75 leading-relaxed">
-              Mobiles, laptops, and accessories — paid securely in MMK.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a
-                href="#catalog-section"
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#0ea5e9] px-5 py-3 text-sm font-semibold text-white shadow-market hover:bg-[#38bdf8] active:scale-[0.98] transition-[colors,transform]"
-              >
-                Shop devices
-                <ArrowDown className="w-4 h-4" />
-              </a>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* FULL-BLEED HERO — brand first, new + trending carousel */}
+      <HeroCarousel />
 
       {orders.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-6">

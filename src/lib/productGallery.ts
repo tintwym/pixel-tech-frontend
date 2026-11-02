@@ -70,6 +70,7 @@ const NON_COLOR_TOKENS = new Set([
   'imac',
   'mini',
   'chip',
+  'storage',
 ]);
 
 function titleCaseColor(id: string): string {
@@ -302,13 +303,23 @@ export function resolveProductGallery(
   }
 
   const sizedColorUrls = sized.filter((u) => extractColorIdFromUrl(u) === active.id);
-  if (sizedColorUrls.length) {
-    return { colors, gallery: sizedColorUrls };
+
+  // Size chosen → only that size's finish shots (never mix 11"/13").
+  if (selectedSize) {
+    if (sizedColorUrls.length) return { colors, gallery: sizedColorUrls };
+    return { colors, gallery: hero() };
   }
 
-  // Size picked but no finish pack for it → show that size's size-select shots.
-  if (selectedSize) {
-    return { colors, gallery: hero() };
+  // Finish chosen before size: if finishes are size-specific, preview the
+  // smallest available size pack instead of mixing every size together.
+  const sizeSpecific = active.imageUrls.filter((u) => extractSizeIdFromUrl(u));
+  if (sizeSpecific.length) {
+    const sizeIds = Array.from(
+      new Set(sizeSpecific.map((u) => extractSizeIdFromUrl(u)).filter((s): s is string => Boolean(s)))
+    ).sort((a, b) => parseFloat(a) - parseFloat(b));
+    const preferred = sizeIds[0];
+    const preview = sizeSpecific.filter((u) => extractSizeIdFromUrl(u) === preferred);
+    if (preview.length) return { colors, gallery: preview };
   }
 
   const gallery = active.imageUrls.length ? active.imageUrls : hero();
