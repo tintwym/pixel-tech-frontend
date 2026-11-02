@@ -85,7 +85,7 @@ function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
     api.images
       ?.map((img) => img.path)
       .filter((path): path is string => Boolean(path) && !isPlaceholderImage(path)) ?? [];
-  // Prefer live API/Cloudinary galleries; local Unsplash/curated is fallback only.
+  // Curated local galleries win for order (hero first). API is fallback for unseeded SKUs.
   const localGallery =
     local?.imageUrls?.length
       ? local.imageUrls.filter((path) => !isPlaceholderImage(path))
@@ -93,10 +93,10 @@ function mapApiProduct(api: ApiProduct, local?: GroceryItem): GroceryItem {
         ? [local.imageUrl]
         : [];
   const imageUrls =
-    apiGallery.length > 0
-      ? apiGallery
-      : localGallery.length > 0
-        ? localGallery
+    localGallery.length > 0
+      ? localGallery
+      : apiGallery.length > 0
+        ? apiGallery
         : [
             'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80',
           ];
