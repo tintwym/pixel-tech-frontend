@@ -308,7 +308,7 @@ export default function GroceryCatalog({
   };
 
   const selectTriggerClass =
-    'w-full min-h-11 px-2.5 py-2.5 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-sm text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors';
+    'w-full min-h-11 px-2.5 py-2.5 rounded-xl border border-[#0284c7]/12 dark:border-white/10 bg-white dark:bg-[#121a24] font-medium text-sm text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/30 dark:hover:border-white/20 transition-colors';
 
   const brandOptions = [
     { value: 'All Brands', label: 'Brand' },
@@ -338,23 +338,25 @@ export default function GroceryCatalog({
     description: ZONE_DELIVERY_STATUS[zone]?.title,
   }));
 
+  const resultCountLabel = `${filteredProducts.length} ${
+    filteredProducts.length === 1 ? 'item' : 'items'
+  }${
+    selectedZone !== 'All Zones' && zoneDeliveryInfo.status === 'delayed'
+      ? ` · +${zoneDeliveryInfo.delayMinutes}m in ${selectedZone}`
+      : ''
+  }`;
+
+  const toolbarSelectClass =
+    'min-w-[9.5rem] px-3 py-2.5 rounded-xl border border-[#0284c7]/12 dark:border-white/10 bg-white dark:bg-[#121a24] text-sm font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/30 dark:hover:border-white/20 transition-colors';
+
   return (
-    <div id="catalog-section" className="space-y-8 scroll-mt-28 md:scroll-mt-36">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-[#0f172a] dark:text-[#e7eef5] tracking-tight">
-            Device catalog
-          </h2>
-          <p className="mt-1 text-sm text-[#64748b] dark:text-[#8a9eb0]">
-            Newest models first — mobiles, laptops, and accessories for Yangon delivery.
-          </p>
-        </div>
-        <p className="hidden sm:block text-xs font-medium text-[#64748b] dark:text-[#8a9eb0]">
-          {`${filteredProducts.length} ${filteredProducts.length === 1 ? 'item' : 'items'}${
-            selectedZone !== 'All Zones' && zoneDeliveryInfo.status === 'delayed'
-              ? ` · +${zoneDeliveryInfo.delayMinutes}m delay in ${selectedZone}`
-              : ''
-          }`}
+    <div id="catalog-section" className="space-y-6 scroll-mt-28 md:scroll-mt-36">
+      <div>
+        <h2 className="font-display text-3xl sm:text-4xl font-semibold text-[#0f172a] dark:text-[#e7eef5] tracking-tight">
+          Shop all
+        </h2>
+        <p className="mt-1 text-sm text-[#64748b] dark:text-[#8a9eb0]">
+          Newest first · mobiles, laptops &amp; accessories for Yangon delivery.
         </p>
       </div>
 
@@ -374,9 +376,10 @@ export default function GroceryCatalog({
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-end">
-        {/* Mobile: Brand / Category / Filters — search lives in the showroom header */}
-        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 md:hidden">
+      {/* Showroom filter toolbar */}
+      <div className="rounded-2xl border border-[#0284c7]/10 dark:border-white/8 bg-white/55 dark:bg-[#121a24]/55 backdrop-blur-sm px-3 py-3 sm:px-4">
+        {/* Mobile: Brand primary · Category · more filters */}
+        <div className="grid grid-cols-[1.2fr_1fr_auto] gap-2 md:hidden">
           <Select
             id="brand-select-mobile"
             aria-label="Brand"
@@ -384,6 +387,7 @@ export default function GroceryCatalog({
             onChange={setSelectedBrand}
             options={brandOptions}
             size="sm"
+            icon={<Tag className="w-3.5 h-3.5 text-[#0284c7] shrink-0" />}
             className={selectTriggerClass}
           />
           <Select
@@ -393,16 +397,16 @@ export default function GroceryCatalog({
             onChange={setSelectedCategory}
             options={categoryOptions}
             size="sm"
-            className={selectTriggerClass}
+            className={`${selectTriggerClass} text-[#64748b] dark:text-[#94a3b8]`}
           />
           <button
             type="button"
             id="filters-open-mobile"
             onClick={() => setFiltersOpen(true)}
-            className={`relative min-h-11 min-w-11 px-3 rounded-2xl border inline-flex items-center justify-center transition-colors cursor-pointer ${
+            className={`relative min-h-11 min-w-11 px-3 rounded-xl border inline-flex items-center justify-center transition-colors cursor-pointer ${
               sheetFiltersActive
                 ? 'border-[#0284c7]/40 bg-[#e0f2fe]/70 text-[#0284c7] dark:border-sky-400/40 dark:bg-sky-500/15 dark:text-sky-300'
-                : 'border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35'
+                : 'border-[#0284c7]/12 dark:border-white/10 bg-white dark:bg-[#121a24] text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/30'
             }`}
             aria-label="Filters"
             aria-haspopup="dialog"
@@ -415,7 +419,7 @@ export default function GroceryCatalog({
           </button>
         </div>
 
-        {/* Desktop: Brand / Category / Zone / Best value */}
+        {/* Desktop: full-width Brand · Category · Zone · Best value · count/clear */}
         <div className="hidden md:flex flex-wrap items-center gap-2">
           <Select
             id="brand-select"
@@ -423,8 +427,8 @@ export default function GroceryCatalog({
             value={selectedBrand}
             onChange={setSelectedBrand}
             options={desktopBrandOptions}
-            icon={<Tag className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
-            className="min-w-40 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
+            icon={<Tag className="w-4 h-4 text-[#0284c7] shrink-0" />}
+            className={`${toolbarSelectClass} min-w-[11rem] font-semibold`}
           />
 
           <Select
@@ -433,8 +437,8 @@ export default function GroceryCatalog({
             value={selectedCategory}
             onChange={setSelectedCategory}
             options={desktopCategoryOptions}
-            icon={<LayoutGrid className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
-            className="min-w-44 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
+            icon={<LayoutGrid className="w-4 h-4 text-[#64748b] shrink-0" />}
+            className={`${toolbarSelectClass} min-w-[11rem] text-[#475569] dark:text-[#94a3b8]`}
           />
 
           <Select
@@ -443,43 +447,54 @@ export default function GroceryCatalog({
             value={selectedZone}
             onChange={setSelectedZone}
             options={zoneOptions}
-            icon={<MapPin className="w-4 h-4 text-[#0ea5e9] shrink-0" />}
-            className="min-w-48 px-3.5 py-3 rounded-2xl border border-[#0284c7]/15 dark:border-white/10 bg-white/80 dark:bg-[#121a24] font-medium text-[#0f172a] dark:text-[#e7eef5] hover:border-[#0284c7]/35 dark:hover:border-white/20 transition-colors"
+            icon={<MapPin className="w-4 h-4 text-[#64748b] shrink-0" />}
+            className={`${toolbarSelectClass} min-w-[10.5rem] text-[#475569] dark:text-[#94a3b8]`}
           />
 
           <button
             id="best-value-toggle"
             type="button"
             onClick={() => setOnlyBestValue(!onlyBestValue)}
-            className={`px-3.5 py-3 rounded-2xl text-sm font-medium border transition-colors cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl text-sm font-medium border transition-colors cursor-pointer ${
               onlyBestValue
                 ? 'bg-amber-400 border-amber-400 text-slate-950'
-                : 'bg-white/80 dark:bg-[#121a24] border-[#0284c7]/15 dark:border-white/10 text-[#0f172a] dark:text-[#e7eef5]'
+                : 'bg-transparent border-[#0284c7]/12 dark:border-white/10 text-[#475569] dark:text-[#94a3b8] hover:border-[#0284c7]/30 hover:text-[#0f172a] dark:hover:text-[#e7eef5]'
             }`}
           >
             Best value
           </button>
-        </div>
-      </div>
 
-      {/* Mobile clear + count */}
-      <div className="flex items-center justify-between gap-3 md:hidden">
-        <p className="text-xs font-medium text-[#64748b] dark:text-[#8a9eb0]">
-          {`${filteredProducts.length} ${filteredProducts.length === 1 ? 'item' : 'items'}${
-            selectedZone !== 'All Zones' && zoneDeliveryInfo.status === 'delayed'
-              ? ` · +${zoneDeliveryInfo.delayMinutes}m in ${selectedZone}`
-              : ''
-          }`}
-        </p>
-        {filtersActive && (
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="text-xs font-semibold text-[#0284c7] dark:text-sky-400 cursor-pointer"
-          >
-            Clear filters
-          </button>
-        )}
+          <div className="ml-auto flex items-center gap-3 pl-2">
+            <p className="text-xs font-medium tabular-nums text-[#64748b] dark:text-[#8a9eb0]">
+              {resultCountLabel}
+            </p>
+            {filtersActive && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-xs font-semibold text-[#0284c7] dark:text-sky-400 hover:underline cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile count + clear */}
+        <div className="mt-2.5 flex items-center justify-between gap-3 md:hidden">
+          <p className="text-xs font-medium tabular-nums text-[#64748b] dark:text-[#8a9eb0]">
+            {resultCountLabel}
+          </p>
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-xs font-semibold text-[#0284c7] dark:text-sky-400 cursor-pointer"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Mobile Filters sheet — Zone + Best value */}
