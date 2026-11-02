@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin, Home,
-  LayoutGrid, UserRound,
-  ChevronRight, Package, Truck, Bell,
+  LayoutGrid, UserRound, Truck,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import HeroCarousel from '@/components/HeroCarousel';
@@ -20,6 +19,7 @@ import OrderTracker from '@/components/OrderTracker';
 import UserProfileModal from '@/components/UserProfileModal';
 import AuthModal from '@/components/AuthModal';
 import AuthForm from '@/components/AuthForm';
+import MobileProfilePanel from '@/components/MobileProfilePanel';
 import NotificationCenter, { NotificationMsg } from '@/components/NotificationCenter';
 import ToastContainer, { ToastMessage } from '@/components/ToastContainer';
 import QuickReorder from '@/components/QuickReorder';
@@ -1018,72 +1018,21 @@ export default function Storefront() {
 
             <div className="flex-1 overflow-y-auto px-4 py-5 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))]">
               {isSignedIn ? (
-                <>
-                  <div className="flex flex-col items-center text-center mb-8">
-                    {profile.avatarUrl ? (
-                      <img
-                        src={profile.avatarUrl}
-                        alt=""
-                        className="h-20 w-20 rounded-full object-cover ring-2 ring-white dark:ring-white/10 shadow-sm"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e0f2fe] text-2xl font-semibold text-[#0284c7]">
-                        {(profile.name || 'P').charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                    <p className="mt-3 font-display text-lg font-semibold text-[#0f172a] dark:text-[#e7eef5]">
-                      {profile.name}
-                    </p>
-                    <p className="text-sm text-[#64748b] dark:text-[#8a9eb0]">{profile.email}</p>
-                  </div>
-
-                  <div className="overflow-hidden rounded-2xl bg-white dark:bg-[#121a24] border border-[#0284c7]/10 dark:border-white/10">
-                    <button
-                      type="button"
-                      onClick={() => setIsProfileOpen(true)}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-black/[0.03] dark:active:bg-white/5"
-                    >
-                      <UserRound className="w-5 h-5 text-[#0284c7] shrink-0" />
-                      <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                        Account
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-[#94a3b8]" />
-                    </button>
-                    <div className="mx-4 border-t border-[#0284c7]/10 dark:border-white/10" />
-                    <button
-                      type="button"
-                      onClick={() => setIsOrderDetailsOpen(true)}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-black/[0.03] dark:active:bg-white/5"
-                    >
-                      <Package className="w-5 h-5 text-[#0284c7] shrink-0" />
-                      <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                        Orders
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-[#94a3b8]" />
-                    </button>
-                    <div className="mx-4 border-t border-[#0284c7]/10 dark:border-white/10" />
-                    <button
-                      type="button"
-                      onClick={() => setIsNotificationOpen(true)}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left cursor-pointer active:bg-black/[0.03] dark:active:bg-white/5"
-                    >
-                      <Bell className="w-5 h-5 text-[#0284c7] shrink-0" />
-                      <span className="flex-1 text-sm font-medium text-[#0f172a] dark:text-[#e7eef5]">
-                        Notifications
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-[#94a3b8]" />
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="mt-8 w-full text-center text-sm font-medium text-red-500 dark:text-red-400 cursor-pointer py-2"
-                  >
-                    Sign out
-                  </button>
-                </>
+                <MobileProfilePanel
+                  profile={profile}
+                  onUpdateProfile={(updater) => {
+                    if (typeof updater === 'function') setProfile(updater);
+                    else setProfile(updater);
+                  }}
+                  onAddToast={handleAddToast}
+                  onOpenOrders={() => setIsOrderDetailsOpen(true)}
+                  onOpenNotifications={() => setIsNotificationOpen(true)}
+                  onSignOut={handleSignOut}
+                  themePref={themePref}
+                  isDarkMode={isDarkMode}
+                  themeLabel={themeLabel}
+                  onToggleTheme={toggleTheme}
+                />
               ) : (
                 <AuthForm
                   variant="panel"
