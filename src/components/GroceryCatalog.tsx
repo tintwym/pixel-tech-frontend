@@ -628,7 +628,7 @@ export default function GroceryCatalog({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10 sm:gap-x-8 sm:gap-y-12">
           {filteredProducts.map((item, index) => {
             const out = item.stock === 0;
             const finishes = buildColorOptions(item.imageUrls?.length ? item.imageUrls : [item.imageUrl]);
@@ -638,64 +638,63 @@ export default function GroceryCatalog({
                 key={item.id}
                 type="button"
                 layout
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
-                  duration: 0.4,
-                  delay: Math.min(index * 0.035, 0.25),
+                  duration: 0.35,
+                  delay: Math.min(index * 0.03, 0.2),
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                whileHover={{ y: -3, transition: { duration: 0.2 } }}
                 onClick={() => setDetailsItem(item)}
                 aria-label={`View details for ${item.name}`}
                 className="group flex flex-col text-left cursor-pointer"
               >
-                <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#e8f0f6] dark:bg-[#0B1220]">
+                <div className="relative aspect-square overflow-hidden rounded-[1.25rem] bg-[#f3f5f7] dark:bg-[#101820] ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
                   <ProductImage
                     src={item.imageUrl}
                     alt={item.name}
-                    className={`h-full w-full object-contain p-4 sm:p-5 transition-transform duration-500 ease-out group-hover:scale-[1.03] ${
-                      out ? 'opacity-45' : ''
+                    className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] ${
+                      out ? 'opacity-40' : ''
                     }`}
                   />
                   {out && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="rounded-full bg-[#0B1220]/75 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+                    <span className="absolute inset-0 flex items-center justify-center bg-white/20 dark:bg-black/20">
+                      <span className="rounded-full bg-[#0f172a]/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-white">
                         Sold out
                       </span>
                     </span>
                   )}
                 </div>
 
-                <div className="mt-3 flex flex-1 flex-col gap-1.5 px-0.5">
-                  <h3 className="font-display font-semibold text-[14px] sm:text-[15px] text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2">
+                <div className="mt-3.5 flex flex-1 flex-col gap-1">
+                  <h3 className="font-sans text-[13px] sm:text-sm font-medium text-[#0f172a] dark:text-[#e7eef5] leading-snug line-clamp-2 tracking-[-0.01em]">
                     {item.name}
                   </h3>
                   <p
-                    className={`font-semibold tabular-nums leading-none ${
+                    className={`tabular-nums leading-none ${
                       out
                         ? 'text-[#94a3b8] dark:text-[#64748b]'
-                        : 'text-[#0f172a] dark:text-[#e7eef5]'
+                        : 'text-[#334155] dark:text-[#cbd5e1]'
                     }`}
                   >
-                    <span className="text-base sm:text-lg tracking-tight">
+                    <span className="text-sm sm:text-[15px] font-semibold tracking-tight">
                       {item.price.toLocaleString()}
                     </span>
-                    <span className="ml-1 text-[10px] font-medium text-[#64748b]">MMK</span>
+                    <span className="ml-1 text-[10px] font-medium text-[#94a3b8]">MMK</span>
                   </p>
                   {finishes.length > 1 && (
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5" aria-hidden>
-                      {finishes.slice(0, 6).map((color) => (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5" aria-hidden>
+                      {finishes.slice(0, 5).map((color) => (
                         <span
                           key={color.id}
-                          className="h-2.5 w-2.5 rounded-full border border-black/10 dark:border-white/20"
+                          className="h-2 w-2 rounded-full ring-1 ring-black/10 dark:ring-white/20"
                           style={{ backgroundColor: color.swatch }}
                           title={color.label}
                         />
                       ))}
-                      {finishes.length > 6 && (
-                        <span className="text-[10px] font-medium text-[#64748b]">
-                          +{finishes.length - 6}
+                      {finishes.length > 5 && (
+                        <span className="text-[10px] font-medium text-[#94a3b8]">
+                          +{finishes.length - 5}
                         </span>
                       )}
                     </div>
