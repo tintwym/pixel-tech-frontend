@@ -39,25 +39,38 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
   if (!slide) return null;
 
   const isDark = slide.tone === 'dark';
-  const brandClass = isDark ? 'text-white' : 'text-[#0f172a]';
-  const headlineClass = isDark ? 'text-[#e0f2fe]' : 'text-[#0c4a6e]';
-  const supportClass = isDark ? 'text-white/75' : 'text-slate-600';
-  const kindClass = isDark ? 'text-sky-300/90' : 'text-[#0284c7]';
-  const overlayClass = isDark
-    ? 'bg-linear-to-t from-[#0B1220]/88 via-[#0B1220]/35 to-[#0B1220]/20'
-    : 'bg-linear-to-t from-white/90 via-white/35 to-white/10';
+  const sectionBg = isDark ? 'bg-[#000000]' : 'bg-[#fbfbfd]';
+  const brandClass = isDark ? 'text-white' : 'text-[#1d1d1f]';
+  const headlineClass = isDark ? 'text-white' : 'text-[#1d1d1f]';
+  const supportClass = isDark ? 'text-white/70' : 'text-[#6e6e73]';
+  const kindClass = isDark ? 'text-white/55' : 'text-[#6e6e73]';
+  const outlineCta = isDark
+    ? 'border-white/80 text-white hover:bg-white/10'
+    : 'border-[#0071e3] text-[#0071e3] hover:bg-[#0071e3]/06';
   const controlClass = isDark
-    ? 'border-white/20 bg-black/25 text-white hover:bg-black/40'
-    : 'border-slate-300/70 bg-white/70 text-slate-800 hover:bg-white';
+    ? 'border-white/20 bg-white/10 text-white hover:bg-white/20'
+    : 'border-black/10 bg-black/5 text-[#1d1d1f] hover:bg-black/10';
+  const desktopOverlay = isDark
+    ? 'bg-linear-to-t from-black/80 via-black/25 to-black/40'
+    : 'bg-linear-to-t from-white/90 via-white/30 to-white/15';
 
   const focal =
     slide.id === 'iphone-duo'
-      ? 'object-[center_22%] sm:object-[center_28%]'
-      : 'object-[center_32%] sm:object-[center_38%]';
+      ? 'object-[center_28%]'
+      : slide.id === 'macbook-pro-m6'
+        ? 'object-[center_62%]'
+        : 'object-[center_40%]';
+
+  const mobileFocal =
+    slide.id === 'iphone-duo'
+      ? 'object-[center_35%]'
+      : slide.id === 'macbook-pro-m6'
+        ? 'object-[center_70%]'
+        : 'object-bottom';
 
   return (
     <section
-      className="relative isolate min-h-[min(78dvh,100svh)] sm:min-h-[88vh] w-full overflow-hidden"
+      className={`relative isolate w-full overflow-hidden ${sectionBg}`}
       aria-roledescription="carousel"
       aria-label="New and trending devices"
       onMouseEnter={() => setPaused(true)}
@@ -67,73 +80,150 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPaused(false);
       }}
     >
-      <AnimatePresence mode="sync" initial={false}>
-        <motion.img
-          key={slide.id}
-          src={slide.imageUrl}
-          alt={slide.alt}
-          initial={
-            reduceMotion
-              ? { opacity: 1 }
-              : { opacity: 0, scale: 1.06 }
-          }
-          animate={
-            reduceMotion
-              ? { opacity: 1 }
-              : { opacity: 1, scale: 1 }
-          }
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.02 }}
-          transition={{ duration: reduceMotion ? 0.2 : 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className={`absolute inset-0 z-0 h-full w-full object-cover ${focal}`}
-          fetchPriority={index === 0 ? 'high' : 'auto'}
-          draggable={false}
-        />
-      </AnimatePresence>
-
-      <div className={`absolute inset-0 z-[1] transition-colors duration-700 ${overlayClass}`} aria-hidden />
-
-      <div className="relative z-10 flex min-h-[min(78dvh,100svh)] sm:min-h-[88vh] flex-col justify-center sm:justify-end px-5 pb-[max(3.25rem,calc(env(safe-area-inset-bottom)+2.75rem))] pt-[max(5.5rem,calc(env(safe-area-inset-top)+4.5rem))] sm:px-10 sm:pb-28 sm:pt-28 lg:px-16 lg:pb-32">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${slide.id}-copy`}
-            initial={reduceMotion ? false : { opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduceMotion ? undefined : { opacity: 0, y: -12 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-2xl"
-          >
-            <p className={`font-display text-[2.25rem] leading-[0.95] sm:text-6xl md:text-7xl lg:text-8xl font-semibold tracking-tight text-balance sm:leading-[0.95] ${brandClass}`}>
-              Pixel Tech
-            </p>
-            <p className={`mt-3.5 sm:mt-5 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] ${kindClass}`}>
-              {slide.kind}
-            </p>
-            <h2 className={`mt-1.5 sm:mt-2 font-display text-lg sm:text-2xl md:text-3xl font-medium text-balance leading-snug ${headlineClass}`}>
-              {slide.headline}
-            </h2>
-            <p className={`mt-2.5 sm:mt-3 max-w-md text-[13px] sm:text-base leading-relaxed ${supportClass}`}>
-              {slide.support}
-            </p>
-            <div className="mt-5 sm:mt-8 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => jumpToCatalog(slide.category)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-[#0ea5e9] px-5 py-3 text-sm font-semibold text-white shadow-market hover:bg-[#38bdf8] active:scale-[0.98] transition-[colors,transform] cursor-pointer"
-              >
-                {slide.ctaLabel}
-                <ArrowDown className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
+      {/* Desktop / tablet: full-bleed background image */}
+      <div className="pointer-events-none absolute inset-0 z-0 hidden sm:block">
+        <AnimatePresence mode="sync" initial={false}>
+          <motion.img
+            key={`desk-${slide.id}`}
+            src={slide.imageUrl}
+            alt=""
+            aria-hidden
+            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.02 }}
+            transition={{ duration: reduceMotion ? 0.2 : 0.9, ease: [0.22, 1, 0.36, 1] }}
+            className={`absolute inset-0 h-full w-full object-cover ${focal}`}
+            fetchPriority={index === 0 ? 'high' : 'auto'}
+            draggable={false}
+          />
         </AnimatePresence>
+        <div className={`absolute inset-0 ${desktopOverlay}`} aria-hidden />
+      </div>
+
+      <div className="relative z-10 mx-auto flex min-h-[min(92dvh,100svh)] w-full max-w-7xl flex-col sm:min-h-[88vh] sm:justify-end">
+        {/* Apple-style mobile stack: copy → CTAs → image */}
+        <div className="flex flex-1 flex-col sm:flex-none sm:pb-28 sm:pt-28 lg:pb-32">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${slide.id}-copy`}
+              initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -10 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="mx-auto w-full max-w-xl shrink-0 px-5 pt-[max(4.75rem,calc(env(safe-area-inset-top)+3.75rem))] text-center sm:mx-0 sm:max-w-2xl sm:px-10 sm:pt-0 sm:text-left lg:px-16"
+            >
+              <p
+                className={`font-display text-[2rem] font-semibold leading-[1.05] tracking-tight text-balance sm:text-6xl sm:leading-[0.95] md:text-7xl lg:text-8xl ${brandClass}`}
+              >
+                Pixel Tech
+              </p>
+              <p
+                className={`mt-2.5 text-[11px] font-medium uppercase tracking-[0.16em] sm:mt-5 sm:text-xs sm:tracking-[0.18em] ${kindClass}`}
+              >
+                {slide.kind}
+              </p>
+              <h2
+                className={`mt-1.5 font-display text-[1.5rem] font-semibold leading-snug text-balance sm:mt-2 sm:text-2xl sm:font-medium md:text-3xl ${headlineClass}`}
+              >
+                {slide.headline}
+              </h2>
+              <p
+                className={`mx-auto mt-1.5 max-w-[20rem] text-[15px] leading-snug sm:mx-0 sm:mt-3 sm:max-w-md sm:text-base sm:leading-relaxed ${supportClass}`}
+              >
+                {slide.support}
+              </p>
+
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 sm:mt-8 sm:justify-start sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => jumpToCatalog(slide.category)}
+                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-[#0071e3] px-5 py-2.5 text-[14px] font-medium text-white transition-[colors,transform] hover:bg-[#0077ed] active:scale-[0.98] cursor-pointer"
+                >
+                  {slide.ctaLabel}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => jumpToCatalog()}
+                  className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border px-5 py-2.5 text-[14px] font-medium transition-[colors,transform] active:scale-[0.98] cursor-pointer ${outlineCta}`}
+                >
+                  Browse all
+                  <ArrowDown className="h-3.5 w-3.5 opacity-80" />
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Mobile product plane — centered, bottom-weighted, clipped into next section */}
+          <div className="relative mt-5 flex min-h-[48dvh] flex-1 items-end justify-center overflow-hidden sm:hidden">
+            <AnimatePresence mode="sync" initial={false}>
+              <motion.img
+                key={`mob-${slide.id}`}
+                src={slide.imageUrl}
+                alt={slide.alt}
+                initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                transition={{ duration: reduceMotion ? 0.2 : 0.55, ease: [0.22, 1, 0.36, 1] }}
+                className={`h-full w-full object-cover ${mobileFocal}`}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+                draggable={false}
+              />
+            </AnimatePresence>
+
+            {count > 1 && (
+              <div className="absolute inset-x-0 bottom-3 z-10 flex items-center justify-center gap-2.5 px-5 pb-[env(safe-area-inset-bottom)]">
+                <button
+                  type="button"
+                  aria-label="Previous slide"
+                  onClick={() => go(index - 1)}
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur-md transition-colors cursor-pointer ${controlClass}`}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <div className="flex items-center gap-1.5" role="tablist" aria-label="Hero slides">
+                  {slides.map((s, i) => {
+                    const active = i === index;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        aria-label={`Show ${s.headline}`}
+                        onClick={() => go(i)}
+                        className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                          active
+                            ? isDark
+                              ? 'w-6 bg-white'
+                              : 'w-6 bg-[#1d1d1f]'
+                            : isDark
+                              ? 'w-2 bg-white/40'
+                              : 'w-2 bg-black/25'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  aria-label="Next slide"
+                  onClick={() => go(index + 1)}
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur-md transition-colors cursor-pointer ${controlClass}`}
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {count > 1 && (
-          <div className="mt-6 sm:mt-10 flex items-center gap-3">
+          <div className="absolute bottom-10 left-10 hidden items-center gap-3 sm:flex lg:left-16">
             <button
               type="button"
               aria-label="Previous slide"
               onClick={() => go(index - 1)}
-              className={`inline-flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded-full border backdrop-blur-sm transition-colors cursor-pointer ${controlClass}`}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-sm transition-colors cursor-pointer ${controlClass}`}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -151,11 +241,11 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
                     className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                       active
                         ? isDark
-                          ? 'w-8 bg-sky-400'
-                          : 'w-8 bg-[#0284c7]'
+                          ? 'w-7 bg-white'
+                          : 'w-7 bg-[#1d1d1f]'
                         : isDark
-                          ? 'w-3 bg-white/35 hover:bg-white/55'
-                          : 'w-3 bg-slate-400/45 hover:bg-slate-500/70'
+                          ? 'w-2.5 bg-white/35 hover:bg-white/55'
+                          : 'w-2.5 bg-black/20 hover:bg-black/35'
                     }`}
                   />
                 );
@@ -165,7 +255,7 @@ export default function HeroCarousel({ slides = HERO_SLIDES }: { slides?: HeroSl
               type="button"
               aria-label="Next slide"
               onClick={() => go(index + 1)}
-              className={`inline-flex h-10 w-10 sm:h-9 sm:w-9 items-center justify-center rounded-full border backdrop-blur-sm transition-colors cursor-pointer ${controlClass}`}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-sm transition-colors cursor-pointer ${controlClass}`}
             >
               <ChevronRight className="h-4 w-4" />
             </button>
