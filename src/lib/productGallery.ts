@@ -71,6 +71,7 @@ const NON_COLOR_TOKENS = new Set([
   'mini',
   'chip',
   'storage',
+  'motion',
 ]);
 
 function titleCaseColor(id: string): string {
