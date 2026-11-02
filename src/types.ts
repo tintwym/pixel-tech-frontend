@@ -39,6 +39,7 @@ export type FeaturesRestriction =
   | 'A19'
   | 'Pro Camera'
   | 'S Pen'
+  | 'M2'
   | 'M3'
   | 'M4'
   | 'M4 Pro'
