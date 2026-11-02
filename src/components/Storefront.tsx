@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Moon, Sun, MapPin, Home,
-  Monitor, LayoutGrid, UserRound,
+  MapPin, Home,
+  LayoutGrid, UserRound,
   ChevronRight, Package, Truck, Bell, LogIn,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -995,7 +995,7 @@ export default function Storefront() {
       <AnimatePresence>
         {isMobileProfileOpen && (
           <motion.div
-            className="sm:hidden fixed inset-0 z-30 flex flex-col bg-mist dark:bg-[#0B1220]"
+            className="sm:hidden fixed inset-0 z-[45] flex flex-col bg-mist dark:bg-[#0B1220]"
             role="region"
             aria-labelledby="mobile-profile-title"
             initial={{ opacity: 0 }}
@@ -1003,7 +1003,7 @@ export default function Storefront() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
           >
-            <header className="flex items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b border-black/[0.05] dark:border-white/10 bg-mist/95 dark:bg-[#0B1220]/95 backdrop-blur-md">
+            <header className="flex items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b border-black/[0.05] dark:border-white/10">
               <h2
                 id="mobile-profile-title"
                 className="font-display text-xl font-semibold text-[#0f172a] dark:text-[#e7eef5]"
@@ -1041,55 +1041,7 @@ export default function Storefront() {
                 </p>
               </div>
 
-              {/* Appearance — segmented control */}
-              <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-[#64748b] dark:text-[#8a9eb0]">
-                Appearance
-              </p>
-              <div
-                className="mb-6 grid grid-cols-3 gap-1 rounded-2xl bg-[#dbe7f0]/80 dark:bg-[#121a24] p-1"
-                role="radiogroup"
-                aria-label="Appearance"
-              >
-                {(
-                  [
-                    { id: 'system' as const, label: 'System', icon: Monitor },
-                    { id: 'light' as const, label: 'Light', icon: Sun },
-                    { id: 'dark' as const, label: 'Dark', icon: Moon },
-                  ]
-                ).map((opt) => {
-                  const active = themePref === opt.id;
-                  const Icon = opt.icon;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      onClick={() => setThemePreference(opt.id)}
-                      className={`flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2 text-[11px] font-semibold transition-colors cursor-pointer ${
-                        active
-                          ? 'bg-white text-[#0284c7] shadow-sm dark:bg-[#1a242f] dark:text-sky-300'
-                          : 'text-[#64748b] dark:text-[#8a9eb0]'
-                      }`}
-                    >
-                      <Icon
-                        className={`w-4.5 h-4.5 ${
-                          active
-                            ? opt.id === 'dark'
-                              ? 'text-slate-700 dark:text-sky-300'
-                              : opt.id === 'light'
-                                ? 'text-amber-500'
-                                : 'text-[#0284c7]'
-                            : ''
-                        }`}
-                      />
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Grouped links */}
+              {/* Grouped links — Appearance lives in Account after sign-in; theme follows system by default */}
               <div className="overflow-hidden rounded-2xl bg-white dark:bg-[#121a24] border border-[#0284c7]/10 dark:border-white/10">
                 {isSignedIn ? (
                   <>
@@ -1270,7 +1222,7 @@ export default function Storefront() {
       />
 
       <nav
-        className="sm:hidden fixed bottom-3 inset-x-3 z-40 pb-[env(safe-area-inset-bottom)]"
+        className="sm:hidden fixed bottom-3 inset-x-3 z-50 pb-[env(safe-area-inset-bottom)]"
         aria-label="Primary"
       >
         <div className="mx-auto flex max-w-md items-stretch justify-between gap-0.5 rounded-[1.85rem] border border-[#0284c7]/10 bg-white/90 p-1.5 shadow-[0_12px_40px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-[#121a24]/94 dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
