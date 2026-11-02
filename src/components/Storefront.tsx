@@ -33,6 +33,7 @@ import {
   fetchCurrentUser,
   getStoredToken,
   storeToken,
+  type AuthUser,
 } from '@/lib/authApi';
 import { fetchCatalogProducts } from '@/lib/productsApi';
 import {
@@ -304,9 +305,19 @@ export default function Storefront() {
     }
   }, []);
 
-  const openAccount = () => {
-    if (isSignedIn) setIsProfileOpen(true);
-    else setIsAuthOpen(true);
+  const handleAuthenticated = (user: AuthUser, displayName: string) => {
+    setIsSignedIn(true);
+    setIsAuthOpen(false);
+    // Keep demo wallet/addresses so checkout still works after sign-in.
+    setProfile((prev) => ({
+      ...prev,
+      id: user.id || prev.id || `USR_${Date.now()}`,
+      name: displayName,
+      email: user.email || prev.email,
+      avatarUrl:
+        prev.avatarUrl ||
+        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+    }));
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -349,8 +360,11 @@ export default function Storefront() {
   };
 
   const goMobileCart = () => {
+    // Leave Profile overlay so cart isn’t trapped under the account sheet.
+    setMobileTab('home');
     setIsProfileOpen(false);
     setIsNotificationOpen(false);
+    setIsOrderDetailsOpen(false);
     setActiveTrackingOrder(null);
     setIsCartOpen(true);
   };
@@ -379,6 +393,7 @@ export default function Storefront() {
   const goMobileProfile = () => {
     setMobileTab('profile');
     setIsCartOpen(false);
+    setIsAuthOpen(false);
     setIsNotificationOpen(false);
     setIsOrderDetailsOpen(false);
     setActiveTrackingOrder(null);
@@ -977,19 +992,7 @@ export default function Storefront() {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         onAddToast={handleAddToast}
-        onAuthenticated={(user, displayName) => {
-          setIsSignedIn(true);
-          // Keep demo wallet/addresses so checkout still works after sign-in.
-          setProfile((prev) => ({
-            ...prev,
-            id: user.id || prev.id || `USR_${Date.now()}`,
-            name: displayName,
-            email: user.email || prev.email,
-            avatarUrl:
-              prev.avatarUrl ||
-              'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-          }));
-        }}
+        onAuthenticated={handleAuthenticated}
       />
 
       {/* Mobile Profile — tab page (leave via bottom tabs, not a Done close) */}
@@ -1084,18 +1087,7 @@ export default function Storefront() {
               ) : (
                 <AuthForm
                   variant="panel"
-                  onAuthenticated={(user, displayName) => {
-                    setIsSignedIn(true);
-                    setProfile((prev) => ({
-                      ...prev,
-                      id: user.id || prev.id || `USR_${Date.now()}`,
-                      name: displayName,
-                      email: user.email || prev.email,
-                      avatarUrl:
-                        prev.avatarUrl ||
-                        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-                    }));
-                  }}
+                  onAuthenticated={handleAuthenticated}
                   onAddToast={handleAddToast}
                   onContinueAsGuest={goMobileHome}
                 />

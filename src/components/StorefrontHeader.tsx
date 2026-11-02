@@ -264,22 +264,24 @@ export default function StorefrontHeader({
             </motion.button>
 
             {isSignedIn ? (
-              <ProfileMenu
-                name={profileName}
-                avatarUrl={profileAvatarUrl}
-                active={profileActive}
-                onOpenProfile={onOpenProfile}
-                onSignOut={onSignOut}
-              />
+              <div className="hidden sm:block">
+                <ProfileMenu
+                  name={profileName}
+                  avatarUrl={profileAvatarUrl}
+                  active={profileActive}
+                  onOpenProfile={onOpenProfile}
+                  onSignOut={onSignOut}
+                />
+              </div>
             ) : (
               <button
                 type="button"
                 onClick={onOpenAuth}
-                className="inline-flex h-9 sm:h-9 items-center gap-1.5 rounded-xl sm:rounded-2xl border border-[#0284c7]/20 bg-white dark:bg-[#121a24] px-2 sm:px-3 text-[#0f172a] dark:text-[#e7eef5] text-xs font-semibold hover:bg-white dark:hover:bg-[#1a242f] transition-colors cursor-pointer"
+                className="hidden sm:inline-flex h-9 items-center gap-1.5 rounded-2xl border border-[#0284c7]/20 bg-white dark:bg-[#121a24] px-3 text-[#0f172a] dark:text-[#e7eef5] text-xs font-semibold hover:bg-white dark:hover:bg-[#1a242f] transition-colors cursor-pointer"
                 aria-label="Sign in or create account"
               >
                 <LogIn className="w-4 h-4" />
-                <span className="hidden sm:inline">Sign in</span>
+                <span>Sign in</span>
               </button>
             )}
           </div>
